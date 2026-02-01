@@ -1,0 +1,35 @@
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+@layer base {
+  body {
+    @apply bg-fiori-bg text-fiori-text antialiased;
+    font-family: "72", "Inter", system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .fiori-card {
+    @apply bg-fiori-card rounded-lg border border-fiori-border shadow-card p-4 transition-shadow duration-200 hover:shadow-card-hover;
+  }
+
+  .fiori-input {
+    @apply w-full rounded-md border border-fiori-border bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:border-fiori-blue focus:outline-none focus:ring-1 focus:ring-fiori-blue disabled:cursor-not-allowed disabled:bg-gray-100;
+  }
+
+  .fiori-btn {
+    @apply inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fiori-blue disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .fiori-btn-primary {
+    @apply bg-fiori-blue text-white hover:bg-fiori-blue-dark shadow-sm;
+  }
+
+  .fiori-btn-secondary {
+    @apply border border-fiori-blue text-fiori-blue bg-white hover:bg-blue-50;
+  }
+
+  .fiori-btn-ghost {
+    @apply text-fiori-text hover:bg-gray-100;
+  }
+}
