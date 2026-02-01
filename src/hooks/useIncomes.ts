@@ -4,10 +4,33 @@ import { useAuth } from '../contexts/AuthContext';
 import type { IncomeFormData } from '../lib/schemas';
 import type { DailyIncome } from '../types';
 
+export type { DailyIncome };
+
 export function useIncomes() {
     const { user } = useAuth();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const fetchIncomes = useCallback(async () => {
+        try {
+            if (!user) return [];
+            setLoading(true);
+            const { data, error } = await supabase
+                .from('daily_incomes')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('date', { ascending: false });
+
+            if (error) throw error;
+            return data as DailyIncome[];
+        } catch (err: any) {
+            console.error('Error fetching incomes:', err);
+            setError(err.message);
+            return [];
+        } finally {
+            setLoading(false);
+        }
+    }, [user]);
 
     const registerIncome = useCallback(async (data: IncomeFormData) => {
         if (!user) throw new Error("No usuario autenticado");
@@ -223,6 +246,7 @@ export function useIncomes() {
     }, [user]);
 
     return {
+        fetchIncomes,
         registerIncome,
         checkIncomeExists,
         deleteIncome,

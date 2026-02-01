@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, TrendingDown, Calendar, User, X, Pencil, Trash2, List, Clock, Settings } from 'lucide-react';
 import { useExpenses, type Expense } from '../../hooks/useExpenses';
 import ExpenseForm from '../../components/expenses/ExpenseForm';

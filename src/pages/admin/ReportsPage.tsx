@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, subMonths, addDays, subDays } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { useState, useEffect } from 'react';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { useReports, type ReportSummary } from '../../hooks/useReports';
-import { BarChart3, TrendingUp, TrendingDown, DollarSign, Calendar, FileSpreadsheet, Printer, ShoppingBagIcon } from 'lucide-react';
+import { BarChart3, TrendingUp, TrendingDown, DollarSign, FileSpreadsheet, Printer, ShoppingBagIcon } from 'lucide-react';
 
 export default function ReportsPage() {
     const { fetchReport, loading } = useReports();

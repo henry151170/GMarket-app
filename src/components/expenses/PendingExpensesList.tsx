@@ -6,8 +6,8 @@ import { CheckCircle, AlertCircle, Loader2, Play } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 export default function PendingExpensesList() {
-    const { generatePendingExpenses, fetchTemplates } = useFixedExpenses();
-    const { fetchExpenses, updateExpense, deleteExpense } = useExpenses(); // We'll need a way to filter pending
+    const { generateExpensesForPeriod, fetchTemplates } = useFixedExpenses();
+    const { updateExpense, deleteExpense } = useExpenses(); // We'll need a way to filter pending
 
     const [pendingExpenses, setPendingExpenses] = useState<Expense[]>([]);
     const [templates, setTemplates] = useState<FixedExpenseTemplate[]>([]);
@@ -38,7 +38,8 @@ export default function PendingExpensesList() {
     const handleGenerate = async () => {
         if (!confirm('¿Generar todos los gastos fijos como pendientes para este mes?')) return;
         setLoading(true);
-        await generatePendingExpenses(templates);
+        const now = new Date();
+        await generateExpensesForPeriod(now.getMonth() + 1, now.getFullYear());
         await loadData();
         setLoading(false);
     };

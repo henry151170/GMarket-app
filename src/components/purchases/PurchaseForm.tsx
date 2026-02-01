@@ -137,9 +137,9 @@ export default function PurchaseForm({ onSuccess, onCancel, editId }: PurchaseFo
             supplier_id: supplierId,
             payment_method: paymentMethod,
             notes,
-            items: items.map(({ product_name, quantity, unit_price }) => ({
+            items: items.map(({ product_name, unit_price }) => ({
                 product_name, // Now stores "Document Number"
-                quantity: 1,  // Hardcoded as we operate on full document amount
+                quantity: 1,
                 unit_price: Number(unit_price) // Now stores "Amount"
             }))
         };

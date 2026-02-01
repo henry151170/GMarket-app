@@ -164,7 +164,7 @@ export default function AdminDashboard() {
                                     tickLine={false}
                                 />
                                 <Tooltip
-                                    formatter={(value: number) => [`S/ ${value.toFixed(2)}`, 'Ventas']}
+                                    formatter={(value: any) => [`S/ ${Number(value).toFixed(2)}`, 'Ventas']}
                                     labelFormatter={(label) => new Date(label + 'T00:00:00').toLocaleDateString('es-PE', { day: 'numeric', month: 'long' })}
                                     contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                                 />

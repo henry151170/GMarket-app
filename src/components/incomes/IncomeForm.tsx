@@ -37,24 +37,30 @@ export default function IncomeForm(props: IncomeFormProps) {
     const backLink = profile?.role === 'admin' ? '/admin/incomes' : '/worker';
 
     const form = useForm<IncomeFormData>({
-        resolver: zodResolver(incomeSchema),
+        resolver: zodResolver(incomeSchema) as any,
         defaultValues: {
             fecha: new Date().toLocaleDateString('en-CA'),
-            // Start as undefined to show empty inputs
-            totalFacturas: undefined,
-            totalBoletas: undefined,
-            totalNotas: undefined,
+            totalFacturas: 0,
+            totalBoletas: 0,
+            totalNotas: 0,
             totalCosto: 0,
+            totalGastos: 0,
+            observaciones: '',
+            differenceAmount: 0,
+            differenceReason: '',
+            differenceNote: '',
+            responsible_person: '',
             pagos: {
-                efectivo: undefined,
-                yape: undefined,
-                tarjeta: undefined,
-                transferencia: undefined,
+                efectivo: 0,
+                yape: 0,
+                tarjeta: 0,
+                transferencia: 0,
+                // efectivoUbicacion is optional, so undefined is implicit or we can explicit it
             }
         }
     });
 
-    const { register, handleSubmit, formState: { errors, isSubmitted }, watch, reset, setValue } = form;
+    const { register, handleSubmit, formState: { errors }, watch, reset, setValue } = form;
 
     // Load data if editing
     useEffect(() => {
@@ -169,7 +175,7 @@ export default function IncomeForm(props: IncomeFormProps) {
         }
     }, [totalDia, setValue]);
 
-    const totalCosto = watch('totalCosto') || 0;
+    // Unused totalCosto watch removed
 
     useEffect(() => {
         if (selectedDate) {
@@ -197,8 +203,6 @@ export default function IncomeForm(props: IncomeFormProps) {
 
     const isAdmin = profile?.role === 'admin';
 
-    const [submitSuccess, setSubmitSuccess] = useState(false);
-
     const onSubmit = async (data: IncomeFormData) => {
         try {
             if (id) {
@@ -219,15 +223,7 @@ export default function IncomeForm(props: IncomeFormProps) {
 
     if (loadingData) return <div className="p-8 text-center">Cargando datos...</div>;
 
-    if (submitSuccess) return (
-        <div className="flex flex-col items-center justify-center p-12 bg-white rounded-lg shadow-card text-center animate-in fade-in zoom-in">
-            <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-4">
-                <CheckCircle2 className="w-8 h-8" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">¡Ingreso Registrado!</h2>
-            <p className="text-gray-500">Redirigiendo al panel...</p>
-        </div>
-    );
+    // submitSuccess block removed as it is unreachable
 
     return (
         <div className="max-w-7xl mx-auto bg-white rounded-lg shadow-card overflow-hidden relative">

@@ -5,7 +5,11 @@ import ExpenseForm from '../../components/expenses/ExpenseForm';
 
 export default function RegisterIncomePage() {
     const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
-    const [refreshExpenses, setRefreshExpenses] = useState(0);
+
+    // We can use a simple counter to force re-render if needed, 
+    // but if IncomeForm doesn't actually use it for fetching, we can simplify.
+    // However, keeping the pattern for now but fixing the key usage.
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     return (
         <div className="container mx-auto max-w-4xl space-y-4">
@@ -19,7 +23,7 @@ export default function RegisterIncomePage() {
                 </button>
             </div>
 
-            <IncomeForm refreshTrigger={refreshExpenses} />
+            <IncomeForm refreshTrigger={refreshTrigger} />
 
             {/* Expense Modal */}
             {isExpenseModalOpen && (
@@ -39,10 +43,10 @@ export default function RegisterIncomePage() {
                         </div>
                         <div className="p-6">
                             <ExpenseForm
-                                key={refreshExpenses} // Re-mounts form (clearing inputs) when refreshExpenses changes
+                                key={refreshTrigger} // Re-mounts form (clearing inputs) when refreshTrigger changes
                                 onSuccess={() => {
-                                    // Keep modal open for multiple entries
-                                    setRefreshExpenses(prev => prev + 1);
+                                    setRefreshTrigger(p => p + 1);
+                                    // Optional: also refresh incomes if needed
                                 }}
                                 onCancel={() => setIsExpenseModalOpen(false)}
                             />

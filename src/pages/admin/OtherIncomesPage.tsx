@@ -17,7 +17,7 @@ export default function OtherIncomesPage() {
     const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
     const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
 
-    const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<FormData>({
+    const { register, handleSubmit, reset, watch } = useForm<FormData>({
         defaultValues: {
             fecha: new Date().toLocaleDateString('en-CA'),
             monto: 0,

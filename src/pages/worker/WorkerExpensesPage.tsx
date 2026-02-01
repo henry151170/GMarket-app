@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, TrendingDown, Calendar, Receipt, X, Pencil, Trash2 } from 'lucide-react';
 import { useExpenses, type Expense } from '../../hooks/useExpenses';
 import ExpenseForm from '../../components/expenses/ExpenseForm';

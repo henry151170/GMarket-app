@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Calendar, DollarSign, Edit } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Calendar, Edit } from 'lucide-react';
 import { useIncomes, type DailyIncome } from '../../hooks/useIncomes';
 import { useNavigate } from 'react-router-dom';
 
