@@ -18,7 +18,11 @@ import {
 } from 'lucide-react';
 import clsx from 'clsx';
 
-export default function Sidebar() {
+interface SidebarProps {
+    onClose?: () => void;
+}
+
+export default function Sidebar({ onClose }: SidebarProps) {
     const { profile, signOut } = useAuth();
     const location = useLocation();
 
@@ -45,9 +49,12 @@ export default function Sidebar() {
 
     return (
         <div className="flex flex-col h-full bg-fiori-header text-white w-64 shadow-xl relative z-50">
-            <div className="p-6 border-b border-gray-700">
-                <h1 className="text-xl font-bold">GMarket</h1>
-                <p className="text-xs text-gray-400 mt-1">{profile?.role === 'admin' ? 'Administrador' : 'Encargado'}</p>
+            <div className="p-6 border-b border-gray-700 flex justify-between items-center">
+                <div>
+                    <h1 className="text-xl font-bold">GMarket</h1>
+                    <p className="text-xs text-gray-400 mt-1">{profile?.role === 'admin' ? 'Administrador' : 'Encargado'}</p>
+                </div>
+                {/* Close button for mobile within sidebar (optional but good context) */}
             </div>
 
             <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
@@ -59,6 +66,7 @@ export default function Sidebar() {
                         <Link
                             key={link.to}
                             to={link.to}
+                            onClick={onClose} // Close sidebar on mobile when navigating
                             className={clsx(
                                 "flex items-center gap-3 px-4 py-3 rounded-md transition-colors text-sm font-medium",
                                 isActive
@@ -75,7 +83,10 @@ export default function Sidebar() {
 
             <div className="p-4 border-t border-gray-700">
                 <button
-                    onClick={signOut}
+                    onClick={() => {
+                        signOut();
+                        if (onClose) onClose();
+                    }}
                     className="flex items-center gap-3 px-4 py-3 w-full text-left text-gray-300 hover:bg-red-900/30 hover:text-red-400 rounded-md transition-colors text-sm font-medium"
                 >
                     <LogOut className="w-5 h-5" />
