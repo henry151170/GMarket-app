@@ -51,7 +51,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
         <div className="flex flex-col h-full bg-fiori-header text-white w-64 shadow-xl relative z-50">
             <div className="p-6 border-b border-gray-700 flex justify-between items-center">
                 <div>
-                    <h1 className="text-xl font-bold">GMarket</h1>
+                    <h1 className="text-xl font-bold">{import.meta.env.VITE_APP_NAME || 'GMarket'}</h1>
                     <p className="text-xs text-gray-400 mt-1">{profile?.role === 'admin' ? 'Administrador' : 'Encargado'}</p>
                 </div>
                 {/* Close button for mobile within sidebar (optional but good context) */}

@@ -11,7 +11,7 @@ export default function AppLayout() {
         <div className="flex h-screen bg-fiori-bg overflow-hidden flex-col md:flex-row">
             {/* Mobile Header */}
             <div className="md:hidden bg-fiori-header text-white p-4 flex items-center justify-between shadow-md z-20">
-                <h1 className="font-bold text-lg">GMarket</h1>
+                <h1 className="font-bold text-lg">{import.meta.env.VITE_APP_NAME || 'GMarket'}</h1>
                 <button
                     onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                     className="p-2 hover:bg-white/10 rounded-md transition-colors"
