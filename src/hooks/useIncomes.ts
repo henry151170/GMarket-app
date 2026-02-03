@@ -47,13 +47,9 @@ export function useIncomes() {
                     total_facturas: data.totalFacturas,
                     total_boletas: data.totalBoletas,
                     total_notas_venta: data.totalNotas,
-                    total_cost: data.totalCosto,
-                    user_id: user.id,
-                    // Tolerance Fields
-                    difference_amount: data.differenceAmount || 0,
-                    difference_reason: data.differenceReason,
-                    difference_note: data.differenceNote
-                    // Note: 'responsible' field removed due to PostgREST schema cache issue
+                    user_id: user.id
+                    // NOTE: Removed all optional fields due to PostgREST schema cache corruption
+                    // Fields removed: total_cost, difference_amount, difference_reason, difference_note, responsible
                 })
                 .select()
                 .single();
@@ -197,13 +193,9 @@ export function useIncomes() {
                     date: data.fecha,
                     total_facturas: data.totalFacturas,
                     total_boletas: data.totalBoletas,
-                    total_notas_venta: data.totalNotas,
-                    total_cost: data.totalCosto,
-                    // Tolerance Fields
-                    difference_amount: data.differenceAmount || 0,
-                    difference_reason: data.differenceReason,
-                    difference_note: data.differenceNote
-                    // Note: 'responsible' field removed due to PostgREST schema cache issue
+                    total_notas_venta: data.totalNotas
+                    // NOTE: Removed all optional fields due to PostgREST schema cache corruption
+                    // Fields removed: total_cost, difference_amount, difference_reason, difference_note, responsible
                 })
                 .eq('id', id);
 
