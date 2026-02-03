@@ -93,20 +93,30 @@ export function useReports() {
 
             if (expensesError) throw expensesError;
 
-            // 3. Fetch Purchases
-            // We need payment_method to deduct from breakdown
-            const { data: purchases, error: purchasesError } = await supabase
-                .from('purchases')
-                .select('date, total_amount, payment_method')
-                .gte('date', startDate)
-                .lte('date', endDate);
+            // 3. Fetch Purchases (Cost of Sales) - Table may not exist in all DBs
+            let purchases: any[] = [];
+            try {
+                const { data, error: purchasesError } = await supabase
+                    .from('purchases')
+                    .select('total_cost, date, total_amount, payment_method') // Added total_amount and payment_method back
+                    .eq('user_id', user?.id)
+                    .gte('date', startDate)
+                    .lte('date', endDate);
 
-            if (purchasesError) throw purchasesError;
+                if (purchasesError) throw purchasesError;
+                purchases = data || [];
+            } catch (err: any) {
+                // Silently ignore if table doesn't exist (Gmobile doesn't have purchases table)
+                if (!err.message?.includes('could not find') && !err.message?.includes('does not exist')) {
+                    console.error('Purchases fetch error:', err);
+                }
+            }
 
             // 4. Fetch Other Incomes
             const { data: otherIncomes, error: otherIncomesError } = await supabase
                 .from('other_incomes')
                 .select('date, amount')
+                .eq('user_id', user?.id)
                 .gte('date', startDate)
                 .lte('date', endDate);
 
