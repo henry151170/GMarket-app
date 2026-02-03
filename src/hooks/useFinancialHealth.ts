@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 export interface FinancialHealthMetrics {
     liquidity: {
@@ -23,6 +24,7 @@ export interface FinancialHealthMetrics {
 }
 
 export function useFinancialHealth() {
+    const { user } = useAuth();
     const [metrics, setMetrics] = useState<FinancialHealthMetrics>({
         liquidity: { cashHand: 0, cashBank: 0, total: 0 },
         obligations: { monthlyFixedExpenses: 0, pendingPayables: 0, totalReserved: 0 },
@@ -31,8 +33,8 @@ export function useFinancialHealth() {
     });
 
     useEffect(() => {
-        calculateMetrics();
-    }, []);
+        if (user) calculateMetrics();
+    }, [user]);
 
     const calculateMetrics = async () => {
         try {
@@ -43,7 +45,7 @@ export function useFinancialHealth() {
             thirtyDaysAgo.setDate(today.getDate() - 30);
 
             // 1. Get Liquidity (From Cash Journal)
-            const { data: journal } = await supabase.from('cash_journal').select('*');
+            const { data: journal } = await supabase.from('cash_journal').select('*').eq('user_id', user?.id);
             let hand = 0, bank = 0;
             journal?.forEach(entry => {
                 let amount = Number(entry.amount);
@@ -65,6 +67,7 @@ export function useFinancialHealth() {
             const { data: fixedExpenses } = await supabase
                 .from('expenses')
                 .select('amount, date')
+                .eq('user_id', user?.id)
                 .eq('is_fixed', true)
                 .gte('date', ninetyDaysAgo.toISOString());
 
@@ -74,10 +77,17 @@ export function useFinancialHealth() {
             // 3. Get Variable Performance (Last 30 days)
             const { data: incomes } = await supabase
                 .from('daily_incomes')
-                .select('total_calculated, total_cost')
+                .select('total_calculated, total_cost, total_facturas, total_boletas, total_notas_venta')
+                .eq('user_id', user?.id)
                 .gte('date', thirtyDaysAgo.toISOString());
 
-            const totalSales30 = incomes?.reduce((acc, curr) => acc + Number(curr.total_calculated), 0) || 0;
+            const totalSales30 = incomes?.reduce((acc, curr) => {
+                let amount = Number(curr.total_calculated);
+                if (!amount) {
+                    amount = Number(curr.total_facturas || 0) + Number(curr.total_boletas || 0) + Number(curr.total_notas_venta || 0);
+                }
+                return acc + amount;
+            }, 0) || 0;
             const totalCost30 = incomes?.reduce((acc, curr) => {
                 // Use stored cost or fallback to 65%
                 const cost = Number(curr.total_cost || 0);
@@ -87,6 +97,7 @@ export function useFinancialHealth() {
             const { data: variableExpenses } = await supabase
                 .from('expenses')
                 .select('amount')
+                .eq('user_id', user?.id)
                 .eq('is_fixed', false)
                 .gte('date', thirtyDaysAgo.toISOString());
 

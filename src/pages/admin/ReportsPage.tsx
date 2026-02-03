@@ -4,7 +4,7 @@ import { useReports, type ReportSummary } from '../../hooks/useReports';
 import { BarChart3, TrendingUp, TrendingDown, DollarSign, FileSpreadsheet, Printer, ShoppingBagIcon } from 'lucide-react';
 
 export default function ReportsPage() {
-    const { fetchReport, loading } = useReports();
+    const { fetchReport, loading, error } = useReports();
     const [summary, setSummary] = useState<ReportSummary | null>(null);
 
     // Date Filter State
@@ -51,7 +51,7 @@ export default function ReportsPage() {
                 loadReport(format(mrStart, 'yyyy-MM-dd'), format(mrEnd, 'yyyy-MM-dd'));
                 return;
         }
-    }, [periodType, selectedDate, monthSingle, rangeDates, monthRange]);
+    }, [periodType, selectedDate, monthSingle, rangeDates, monthRange, fetchReport]);
 
     const loadReport = async (startStr?: string, endStr?: string) => {
         if (startStr && endStr) {
@@ -420,8 +420,9 @@ export default function ReportsPage() {
                         </div>
                     </>
                 ) : (
-                    <div className="text-center py-12 text-gray-500 bg-white rounded-lg">
-                        No se pudieron cargar los datos.
+                    <div className="text-center py-12 text-gray-500 bg-white rounded-lg flex flex-col items-center gap-2">
+                        <span>No se pudieron cargar los datos.</span>
+                        {error && <span className="text-red-500 text-sm bg-red-50 px-3 py-1 rounded border border-red-100">{error}</span>}
                     </div>
                 )
             }

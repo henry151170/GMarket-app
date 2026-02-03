@@ -1,6 +1,7 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 export interface ReportSummary {
     total_income: number;
@@ -39,10 +40,17 @@ export interface ReportSummary {
 }
 
 export function useReports() {
+    const { user } = useAuth();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchReport = async (startDate: string, endDate: string) => {
+    const fetchReport = useCallback(async (startDate: string, endDate: string) => {
+        console.log('Fetching report for user:', user?.id);
+        if (!user) {
+            console.warn('No user found in useReports');
+            setError('Usuario no autenticado. Espere un momento...');
+            return null;
+        }
         setLoading(true);
         setError(null);
 
@@ -68,6 +76,7 @@ export function useReports() {
                         cash_location
                     )
                 `)
+                .eq('user_id', user?.id)
                 .gte('date', startDate)
                 .lte('date', endDate);
 
@@ -135,8 +144,15 @@ export function useReports() {
                 transfer: number;
             }>();
 
+            console.log('Report Incomes Fetched:', incomes?.length, incomes);
+
             incomes?.forEach(i => {
-                const incomeAmount = Number(i.total_calculated);
+                // FALLBACK: Calculate manually if total_calculated is 0/null
+                let incomeAmount = Number(i.total_calculated);
+                if (!incomeAmount || incomeAmount === 0) {
+                    incomeAmount = Number(i.total_facturas || 0) + Number(i.total_boletas || 0) + Number(i.total_notas_venta || 0);
+                }
+
                 totalIncome += incomeAmount;
 
                 totalFacturas += Number(i.total_facturas || 0);
@@ -324,7 +340,7 @@ export function useReports() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [user]);
 
     return {
         fetchReport,
