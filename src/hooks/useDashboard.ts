@@ -14,7 +14,10 @@ export interface DashboardStats {
     loading: boolean;
 }
 
+import { useAuth } from '../contexts/AuthContext';
+
 export function useDashboard(dateRange?: { start: string; end: string }) {
+    const { user } = useAuth();
     const [stats, setStats] = useState<DashboardStats>({
         cashHand: 0,
         cashBank: 0,
@@ -28,11 +31,12 @@ export function useDashboard(dateRange?: { start: string; end: string }) {
     });
 
     useEffect(() => {
-        fetchDashboardData();
-    }, [dateRange?.start, dateRange?.end]); // Re-fetch when range changes
+        if (user) fetchDashboardData();
+    }, [user, dateRange?.start, dateRange?.end]); // Re-fetch when user or range changes
 
     const fetchDashboardData = async () => {
         try {
+            if (!user) return;
             setStats(prev => ({ ...prev, loading: true }));
             const today = new Date();
 
@@ -51,7 +55,8 @@ export function useDashboard(dateRange?: { start: string; end: string }) {
             // 1. Fetch entire Journal (optimize later with group by RPC if needed)
             const { data: journal, error } = await supabase
                 .from('cash_journal')
-                .select('*');
+                .select('*')
+                .eq('user_id', user.id);
 
             if (error) throw error;
 
