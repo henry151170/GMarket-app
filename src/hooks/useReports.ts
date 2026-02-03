@@ -82,14 +82,14 @@ export function useReports() {
 
             if (incomesError) throw incomesError;
 
-            // 2. Fetch Expenses (Only PAID)
+            // 2. Fetch Expenses (All expenses - status column doesn't exist in all DBs)
             // We need payment_method to deduct from breakdown
             const { data: expenses, error: expensesError } = await supabase
                 .from('expenses')
-                .select('date, amount, payment_method, status, is_fixed')
+                .select('date, amount, payment_method, is_fixed')
+                .eq('user_id', user?.id)
                 .gte('date', startDate)
-                .lte('date', endDate)
-                .eq('status', 'paid');
+                .lte('date', endDate);
 
             if (expensesError) throw expensesError;
 
