@@ -53,7 +53,7 @@ export function useIncomes() {
                     difference_amount: data.differenceAmount || 0,
                     difference_reason: data.differenceReason,
                     difference_note: data.differenceNote,
-                    responsible_person: data.responsible_person
+                    responsible: data.responsible_person
                 })
                 .select()
                 .single();
@@ -203,7 +203,7 @@ export function useIncomes() {
                     difference_amount: data.differenceAmount || 0,
                     difference_reason: data.differenceReason,
                     difference_note: data.differenceNote,
-                    responsible_person: data.responsible_person
+                    responsible: data.responsible_person
                 })
                 .eq('id', id);
 
