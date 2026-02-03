@@ -53,9 +53,10 @@ export function useDashboard(dateRange?: { start: string; end: string }) {
             const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
 
             // 1. Fetch entire Journal (optimize later with group by RPC if needed)
+            // NOTE: Using explicit column list instead of * to avoid schema cache issues
             const { data: journal, error } = await supabase
                 .from('cash_journal')
-                .select('*')
+                .select('id, date, amount, type, location, description, user_id, currency, created_at')
                 .eq('user_id', user.id);
 
             if (error) throw error;
