@@ -66,7 +66,6 @@ export function useReports() {
                 .select(`
                     date,
                     total_calculated,
-                    total_cost,
                     total_facturas,
                     total_boletas,
                     total_notas_venta,
@@ -169,8 +168,9 @@ export function useReports() {
                 totalBoletas += Number(i.total_boletas || 0);
                 totalNotas += Number(i.total_notas_venta || 0);
 
-                // Logic: Use existing total_cost if available, otherwise fallback
-                const storedCost = Number(i.total_cost || 0);
+                // NOTE: total_cost column removed due to PostgREST schema cache issue
+                // Setting cost to 0 for now
+                const storedCost = 0;
                 const calculatedCost = storedCost > 0 ? storedCost : (incomeAmount * 0.65);
 
                 totalCostOfSales += calculatedCost;

@@ -77,7 +77,7 @@ export function useFinancialHealth() {
             // 3. Get Variable Performance (Last 30 days)
             const { data: incomes } = await supabase
                 .from('daily_incomes')
-                .select('total_calculated, total_cost, total_facturas, total_boletas, total_notas_venta')
+                .select('total_calculated, total_facturas, total_boletas, total_notas_venta')
                 .eq('user_id', user?.id)
                 .gte('date', thirtyDaysAgo.toISOString());
 
@@ -90,7 +90,8 @@ export function useFinancialHealth() {
             }, 0) || 0;
             const totalCost30 = incomes?.reduce((acc, curr) => {
                 // Use stored cost or fallback to 65%
-                const cost = Number(curr.total_cost || 0);
+                // NOTE: total_cost removed due to schema cache issue
+                const cost = 0; // Will use estimation below
                 return acc + (cost > 0 ? cost : Number(curr.total_calculated) * 0.65);
             }, 0) || 0;
 
