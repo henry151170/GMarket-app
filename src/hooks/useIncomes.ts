@@ -52,8 +52,8 @@ export function useIncomes() {
                     // Tolerance Fields
                     difference_amount: data.differenceAmount || 0,
                     difference_reason: data.differenceReason,
-                    difference_note: data.differenceNote,
-                    responsible: data.responsible_person
+                    difference_note: data.differenceNote
+                    // Note: 'responsible' field removed due to PostgREST schema cache issue
                 })
                 .select()
                 .single();
@@ -202,8 +202,8 @@ export function useIncomes() {
                     // Tolerance Fields
                     difference_amount: data.differenceAmount || 0,
                     difference_reason: data.differenceReason,
-                    difference_note: data.differenceNote,
-                    responsible: data.responsible_person
+                    difference_note: data.differenceNote
+                    // Note: 'responsible' field removed due to PostgREST schema cache issue
                 })
                 .eq('id', id);
 
