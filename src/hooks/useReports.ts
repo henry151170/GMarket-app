@@ -345,6 +345,7 @@ export function useReports() {
     return {
         fetchReport,
         loading,
-        error
+        error,
+        user
     };
 }

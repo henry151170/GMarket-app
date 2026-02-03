@@ -101,6 +101,11 @@ export default function ReportsPage() {
 
     return (
         <div className="space-y-6">
+            {/* DEBUG V3 */}
+            <div className="bg-yellow-100 p-2 text-xs font-mono text-yellow-800 border-b border-yellow-200">
+                DEBUG V3 | User: {useReports().user?.id || 'NULL'} | Loading: {String(loading)} | Error: {String(error)}
+            </div>
+
             {/* Header & Filter */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
