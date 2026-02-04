@@ -23,12 +23,9 @@ export default function Login() {
 
             if (error) throw error;
 
-            // Navigation is handled by AuthContext state change or manually here
-            // But usually user stays on page until auth state updates.
-            // We'll let the ProtectedRoute handle redirection or useEffect in App.tsx
-            // For now, let's just wait for the auth state listener to kick in
-            navigate('/');
+            if (error) throw error;
 
+            // Navigation is now handled by useEffect when user state updates
         } catch (err: any) {
             console.error('Login Error Details:', err);
             setError(err.message || 'Error al iniciar sesión');
@@ -36,6 +33,30 @@ export default function Login() {
             setLoading(false);
         }
     };
+
+    // Redirect when user is authenticated
+    React.useEffect(() => {
+        // Check if we have a session/user from Supabase directly to be faster
+        const checkSession = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+                navigate('/', { replace: true });
+            }
+        };
+
+        checkSession();
+
+        // Also listen to navigation events
+        const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_IN' && session) {
+                navigate('/', { replace: true });
+            }
+        });
+
+        return () => {
+            authListener.subscription.unsubscribe();
+        };
+    }, [navigate]);
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
