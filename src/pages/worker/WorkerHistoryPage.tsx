@@ -25,6 +25,20 @@ export default function WorkerHistoryPage() {
         return `S/ ${amount.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`;
     };
 
+    const handleResetAll = async () => {
+        // Security check: Verify logic since only Admins should usually do this.
+        // But per request, we enable it here.
+        if (!confirm("⚠️ ¿PELIGRO: ESTÁS SEGURO? ⚠️\n\nEsto eliminará TODO el historial (Ingresos, Gastos, Caja) y dejará el sistema como nuevo.\n\nNO se puede deshacer.")) return;
+
+        const { error } = await supabase.rpc('reset_all_financial_data');
+        if (error) {
+            alert('Error: ' + error.message);
+        } else {
+            alert('✅ Sistema reiniciado correctamente.');
+            window.location.reload();
+        }
+    };
+
     if (loading) return <div className="p-10 text-center">Cargando historial...</div>;
 
     return (
@@ -32,6 +46,12 @@ export default function WorkerHistoryPage() {
             <div>
                 <h1 className="text-2xl font-bold text-fiori-header">Mi Historial</h1>
                 <p className="text-fiori-text-light">Registro de tus cierres de caja diarios</p>
+                <button
+                    onClick={handleResetAll}
+                    className="mt-2 text-xs text-red-500 hover:text-red-700 underline decoration-dotted"
+                >
+                    (Reseteo Total - Solo usar en Emergencia)
+                </button>
             </div>
 
             <div className="bg-white rounded-lg shadow-card overflow-hidden">

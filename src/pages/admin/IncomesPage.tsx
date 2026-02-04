@@ -41,6 +41,18 @@ export default function IncomesPage() {
         }
     };
 
+    const handleResetAll = async () => {
+        if (!confirm("⚠️ ¿PELIGRO: ESTÁS SEGURO? ⚠️\n\nEsto eliminará TODO el historial (Ingresos, Gastos, Caja) y dejará el sistema como nuevo.\n\nNO se puede deshacer.")) return;
+
+        const { error } = await supabase.rpc('reset_all_financial_data');
+        if (error) {
+            alert('Error: ' + error.message);
+        } else {
+            alert('✅ Sistema reiniciado correctamente.');
+            window.location.reload();
+        }
+    };
+
     useEffect(() => {
         fetchIncomes();
     }, []);
@@ -116,6 +128,13 @@ export default function IncomesPage() {
                     <p className="text-fiori-text-light">Registro diario de ventas, costo y utilidad</p>
                 </div>
                 <div className="flex gap-2">
+                    <button
+                        onClick={handleResetAll}
+                        className="flex items-center gap-2 text-red-600 bg-red-50 px-4 py-2 rounded-md hover:bg-red-100 transition-colors border border-red-200"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                        <span className="text-xs font-bold">Reseteo Total</span>
+                    </button>
                     <a href="/admin/incomes/new" className="flex items-center gap-2 bg-fiori-blue text-white px-4 py-2 rounded-md hover:bg-fiori-blue-dark transition-colors shadow-sm">
                         <DollarSign className="w-5 h-5" />
                         <span>Nuevo Ingreso</span>

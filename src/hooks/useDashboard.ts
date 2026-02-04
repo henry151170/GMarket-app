@@ -56,10 +56,12 @@ export function useDashboard(dateRange?: { start: string; end: string }) {
             // NOTE: Using explicit column list instead of * to avoid schema cache issues
             const { data: journal, error } = await supabase
                 .from('cash_journal')
-                .select('id, date, amount, type, location, description, user_id, currency, created_at')
-                .eq('user_id', user.id);
+                .select('id, date, amount, type, location, description, user_id, currency, created_at');
 
             if (error) throw error;
+
+            console.log('🔍 DEBUG: Raw journal data from DB:', journal);
+            console.log('🔍 DEBUG: metricsStart:', metricsStart, 'metricsEnd:', metricsEnd);
 
             let hand = 0;
             let bank = 0;
@@ -105,19 +107,19 @@ export function useDashboard(dateRange?: { start: string; end: string }) {
                 }
 
                 // Period Stats (Filtered by Date Range)
-                if (entry.date >= metricsStart && entry.date <= metricsEnd) {
+                // Extract date-only string for comparison
+                const entryDateOnly = entry.date.split('T')[0];
+                const metricsStartDate = metricsStart.split('T')[0];
+                const metricsEndDate = metricsEnd.split('T')[0];
+
+                if (entryDateOnly >= metricsStartDate && entryDateOnly <= metricsEndDate) {
                     if (entry.type === 'income') {
                         // Income aggregation (usually PEN)
-                        // If USD income, convert? Or just ignore?
-                        // Let's ignore USD for the main "Ingresos del Mes" chart to avoid mixing currencies badly
-                        // OR assuming 1:1 if we are lazy.
-                        // Best: Only count PEN incomes for the chart/KPIs unless we build multi-currency dashboard.
                         if (currency === 'PEN') {
                             periodIncome += amount;
                             // Daily Aggregation
-                            const dateKey = entry.date.split('T')[0];
-                            const current = dailyMap.get(dateKey) || 0;
-                            dailyMap.set(dateKey, current + amount);
+                            const current = dailyMap.get(entryDateOnly) || 0;
+                            dailyMap.set(entryDateOnly, current + amount);
                         }
                     }
                     if (entry.type === 'income' || entry.type === 'expense') {
@@ -135,6 +137,12 @@ export function useDashboard(dateRange?: { start: string; end: string }) {
             const dailyIncome = Array.from(dailyMap.entries())
                 .map(([date, amount]) => ({ date, amount }))
                 .sort((a, b) => a.date.localeCompare(b.date));
+
+            console.log('🔍 DEBUG: Final stats calculated:');
+            console.log('  - periodIncome:', periodIncome);
+            console.log('  - hand:', hand);
+            console.log('  - bank:', bank);
+            console.log('  - dailyIncome array:', dailyIncome);
 
             setStats({
                 cashHand: hand,

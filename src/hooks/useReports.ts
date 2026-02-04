@@ -60,6 +60,8 @@ export function useReports() {
             // We want .lte('date', endDate) or .lt('date', nextDay).
             // Let's use .lte for clarity with date types.
 
+            console.log('🔍 REPORTS DEBUG: Fetching with dates:', { startDate, endDate });
+
             // 1. Fetch Incomes with Payments
             const { data: incomes, error: incomesError } = await supabase
                 .from('daily_incomes')
@@ -75,18 +77,18 @@ export function useReports() {
                         cash_location
                     )
                 `)
-                .eq('user_id', user?.id)
                 .gte('date', startDate)
                 .lte('date', endDate);
 
             if (incomesError) throw incomesError;
+
+            console.log('🔍 REPORTS DEBUG: Incomes fetched:', incomes?.length, incomes);
 
             // 2. Fetch Expenses (All expenses - status column doesn't exist in all DBs)
             // We need payment_method to deduct from breakdown
             const { data: expenses, error: expensesError } = await supabase
                 .from('expenses')
                 .select('date, amount, payment_method, is_fixed')
-                .eq('user_id', user?.id)
                 .gte('date', startDate)
                 .lte('date', endDate);
 
@@ -98,7 +100,6 @@ export function useReports() {
                 const { data, error: purchasesError } = await supabase
                     .from('purchases')
                     .select('total_cost, date, total_amount, payment_method') // Added total_amount and payment_method back
-                    .eq('user_id', user?.id)
                     .gte('date', startDate)
                     .lte('date', endDate);
 
@@ -115,7 +116,6 @@ export function useReports() {
             const { data: otherIncomes, error: otherIncomesError } = await supabase
                 .from('other_incomes')
                 .select('date, amount')
-                .eq('user_id', user?.id)
                 .gte('date', startDate)
                 .lte('date', endDate);
 

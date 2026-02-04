@@ -194,8 +194,12 @@ export function useIncomes() {
                     total_facturas: data.totalFacturas,
                     total_boletas: data.totalBoletas,
                     total_notas_venta: data.totalNotas
-                    // NOTE: Removed all optional fields due to PostgREST schema cache corruption
-                    // Fields removed: total_cost, difference_amount, difference_reason, difference_note, responsible
+                    total_notas_venta: data.totalNotas,
+                    total_cost: data.totalCosto,
+                    difference_amount: data.differenceAmount,
+                    difference_reason: data.differenceReason,
+                    difference_note: data.differenceNote,
+                    responsible_person: data.responsible_person
                 })
                 .eq('id', id);
 

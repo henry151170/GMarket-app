@@ -46,7 +46,7 @@ export default function RegisterIncomePage() {
                                 key={refreshTrigger} // Re-mounts form (clearing inputs) when refreshTrigger changes
                                 onSuccess={() => {
                                     setRefreshTrigger(p => p + 1);
-                                    // Optional: also refresh incomes if needed
+                                    setIsExpenseModalOpen(false); // Cierra el modal automáticamente
                                 }}
                                 onCancel={() => setIsExpenseModalOpen(false)}
                             />

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { DollarSign, TrendingUp, Wallet, ArrowUpRight } from 'lucide-react';
 import { useDashboard } from '../../hooks/useDashboard';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { supabase } from '../../lib/supabase';
 
 export default function AdminDashboard() {
     const today = new Date();
@@ -22,6 +23,22 @@ export default function AdminDashboard() {
         return `S/ ${amount.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     };
 
+    const handleResetData = async () => {
+        if (!confirm("⚠️ ¿ESTÁS SEGURO? ⚠️\n\nEsto eliminará TODO el historial de ingresos, gastos y movimientos de caja permanentemente.\n\nEsta acción NO se puede deshacer.")) return;
+
+        if (!confirm("CONFIRMACIÓN FINAL:\n\n¿Realmente deseas dejar la base de datos de movimientos en CERO?")) return;
+
+        try {
+            const { error } = await supabase.rpc('reset_all_financial_data');
+            if (error) throw error;
+            alert("✅ Historial eliminado correctamente. El sistema está limpio.");
+            window.location.reload();
+        } catch (e: any) {
+            console.error(e);
+            alert("Error: " + (e.message || "No se pudo ejecutar la limpieza. Asegúrate de haber corrido el script SQL 'create_reset_function.sql'"));
+        }
+    };
+
     if (loading) {
         return <div className="p-10 text-center text-gray-500">Cargando indicadores...</div>;
     }
@@ -32,6 +49,12 @@ export default function AdminDashboard() {
                 <div>
                     <h1 className="text-2xl font-bold text-fiori-header">Dashboard Financiero</h1>
                     <p className="text-fiori-text-light">Resumen general de la empresa</p>
+                    <button
+                        onClick={handleResetData}
+                        className="mt-2 text-xs text-red-500 hover:text-red-700 underline decoration-dotted"
+                    >
+                        (Borrar todo el historial)
+                    </button>
                 </div>
 
                 {/* DATE FILTER */}
@@ -137,48 +160,54 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="fiori-card min-h-[300px]">
                     <h3 className="font-semibold text-gray-800 mb-4">Evolución de Ingresos</h3>
-                    <div className="h-[300px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={dailyIncome}>
-                                <defs>
-                                    <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#2563eb" stopOpacity={0.8} />
-                                        <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                <XAxis
-                                    dataKey="date"
-                                    tickFormatter={(str) => {
-                                        const date = new Date(str + 'T00:00:00'); // Force local time interpretation
-                                        return date.getDate().toString();
-                                    }}
-                                    tick={{ fontSize: 12, fill: '#6b7280' }}
-                                    axisLine={false}
-                                    tickLine={false}
-                                />
-                                <YAxis
-                                    tickFormatter={(val) => `S/ ${val}`}
-                                    tick={{ fontSize: 12, fill: '#6b7280' }}
-                                    axisLine={false}
-                                    tickLine={false}
-                                />
-                                <Tooltip
-                                    formatter={(value: any) => [`S/ ${Number(value).toFixed(2)}`, 'Ventas']}
-                                    labelFormatter={(label) => new Date(label + 'T00:00:00').toLocaleDateString('es-PE', { day: 'numeric', month: 'long' })}
-                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                />
-                                <Area
-                                    type="monotone"
-                                    dataKey="amount"
-                                    stroke="#2563eb"
-                                    fillOpacity={1}
-                                    fill="url(#colorIncome)"
-                                    strokeWidth={3}
-                                />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </div>
+                    {dailyIncome && dailyIncome.length > 0 ? (
+                        <div className="h-[300px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={dailyIncome}>
+                                    <defs>
+                                        <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#2563eb" stopOpacity={0.8} />
+                                            <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                    <XAxis
+                                        dataKey="date"
+                                        tickFormatter={(str) => {
+                                            const date = new Date(str + 'T00:00:00'); // Force local time interpretation
+                                            return date.getDate().toString();
+                                        }}
+                                        tick={{ fontSize: 12, fill: '#6b7280' }}
+                                        axisLine={false}
+                                        tickLine={false}
+                                    />
+                                    <YAxis
+                                        tickFormatter={(val) => `S/ ${val}`}
+                                        tick={{ fontSize: 12, fill: '#6b7280' }}
+                                        axisLine={false}
+                                        tickLine={false}
+                                    />
+                                    <Tooltip
+                                        formatter={(value: any) => [`S/ ${Number(value).toFixed(2)}`, 'Ventas']}
+                                        labelFormatter={(label) => new Date(label + 'T00:00:00').toLocaleDateString('es-PE', { day: 'numeric', month: 'long' })}
+                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                    />
+                                    <Area
+                                        type="monotone"
+                                        dataKey="amount"
+                                        stroke="#2563eb"
+                                        fillOpacity={1}
+                                        fill="url(#colorIncome)"
+                                        strokeWidth={3}
+                                    />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
+                    ) : (
+                        <div className="flex items-center justify-center h-[300px] text-gray-400 bg-gray-50 rounded border border-dashed text-sm">
+                            No hay datos de ingresos para mostrar. Registra algunas ventas primero.
+                        </div>
+                    )}
                 </div>
                 <div className="fiori-card min-h-[300px]">
                     <h3 className="font-semibold text-gray-800 mb-4">Desglose Fiscal vs Real</h3>

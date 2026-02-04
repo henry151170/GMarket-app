@@ -45,7 +45,7 @@ export function useFinancialHealth() {
             thirtyDaysAgo.setDate(today.getDate() - 30);
 
             // 1. Get Liquidity (From Cash Journal)
-            const { data: journal } = await supabase.from('cash_journal').select('*').eq('user_id', user?.id);
+            const { data: journal } = await supabase.from('cash_journal').select('*');
             let hand = 0, bank = 0;
             journal?.forEach(entry => {
                 let amount = Number(entry.amount);
@@ -67,7 +67,6 @@ export function useFinancialHealth() {
             const { data: fixedExpenses } = await supabase
                 .from('expenses')
                 .select('amount, date')
-                .eq('user_id', user?.id)
                 .eq('is_fixed', true)
                 .gte('date', ninetyDaysAgo.toISOString());
 
@@ -78,7 +77,6 @@ export function useFinancialHealth() {
             const { data: incomes } = await supabase
                 .from('daily_incomes')
                 .select('total_calculated, total_facturas, total_boletas, total_notas_venta')
-                .eq('user_id', user?.id)
                 .gte('date', thirtyDaysAgo.toISOString());
 
             const totalSales30 = incomes?.reduce((acc, curr) => {
@@ -98,7 +96,6 @@ export function useFinancialHealth() {
             const { data: variableExpenses } = await supabase
                 .from('expenses')
                 .select('amount')
-                .eq('user_id', user?.id)
                 .eq('is_fixed', false)
                 .gte('date', thirtyDaysAgo.toISOString());
 
