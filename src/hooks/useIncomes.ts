@@ -193,7 +193,6 @@ export function useIncomes() {
                     date: data.fecha,
                     total_facturas: data.totalFacturas,
                     total_boletas: data.totalBoletas,
-                    total_notas_venta: data.totalNotas
                     total_notas_venta: data.totalNotas,
                     total_cost: data.totalCosto,
                     difference_amount: data.differenceAmount,
