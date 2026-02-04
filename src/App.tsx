@@ -21,16 +21,40 @@ import WorkerExpensesPage from './pages/worker/WorkerExpensesPage';
 import WorkerHistoryPage from './pages/worker/WorkerHistoryPage';
 
 function RootRedirect() {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, signOut } = useAuth();
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return (
+    <div className="flex h-screen items-center justify-center bg-gray-50">
+      <div className="text-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+        <p className="text-gray-500">Cargando...</p>
+      </div>
+    </div>
+  );
 
   if (!user) return <Navigate to="/login" replace />;
 
   if (profile?.role === 'admin') return <Navigate to="/admin" replace />;
   if (profile?.role === 'worker') return <Navigate to="/worker" replace />;
 
-  return <Navigate to="/login" replace />;
+  // User is authenticated but has no profile or invalid role
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-6 text-center">
+        <h2 className="text-xl font-bold text-red-600 mb-2">Error de Perfil</h2>
+        <p className="text-gray-600 mb-6">
+          Tu usuario está autenticado pero no tiene un perfil asignado en esta base de datos.
+          Esto puede ocurrir si cambiaste de entorno.
+        </p>
+        <button
+          onClick={() => signOut()}
+          className="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-700 transition-colors"
+        >
+          Cerrar Sesión e Intentar Nuevamente
+        </button>
+      </div>
+    </div>
+  );
 }
 
 function App() {
