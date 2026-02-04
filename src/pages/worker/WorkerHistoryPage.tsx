@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Calendar, Edit } from 'lucide-react';
 import { useIncomes, type DailyIncome } from '../../hooks/useIncomes';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
 
 export default function WorkerHistoryPage() {
     const { fetchIncomes } = useIncomes();
