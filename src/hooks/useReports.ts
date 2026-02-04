@@ -99,12 +99,13 @@ export function useReports() {
             try {
                 const { data, error: purchasesError } = await supabase
                     .from('purchases')
-                    .select('total_cost, date, total_amount, payment_method') // Added total_amount and payment_method back
+                    .select('total_amount, date, payment_method')
                     .gte('date', startDate)
                     .lte('date', endDate);
 
                 if (purchasesError) throw purchasesError;
                 purchases = data || [];
+                console.log('🔍 REPORTS DEBUG: Purchases fetched:', purchases?.length, purchases);
             } catch (err: any) {
                 // Silently ignore if table doesn't exist (Gmobile doesn't have purchases table)
                 if (!err.message?.includes('could not find') && !err.message?.includes('does not exist')) {
