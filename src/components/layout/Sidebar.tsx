@@ -26,6 +26,19 @@ export default function Sidebar({ onClose }: SidebarProps) {
     const { profile, signOut } = useAuth();
     const location = useLocation();
 
+    // Dynamic Branding
+    const appName = import.meta.env.VITE_APP_NAME || 'GMarket';
+    const isGMarket = appName === 'GMarket';
+    const isGMobile = appName === 'Gmobile';
+    const isSafri = appName === 'Safri';
+    const isCustomBranding = isGMarket || isGMobile || isSafri;
+
+    const sidebarBg = isGMarket || isGMobile ? 'bg-gray-900' : isSafri ? 'bg-purple-950' : 'bg-fiori-header';
+    const activeColor = isGMarket ? 'bg-orange-500' : isGMobile ? 'bg-yellow-500' : isSafri ? 'bg-purple-600' : 'bg-fiori-blue';
+    const hoverColor = isGMarket || isGMobile ? 'hover:bg-gray-800' : isSafri ? 'hover:bg-purple-900' : 'hover:bg-gray-700';
+
+    const imgSrc = isGMarket ? '/logo.png' : isGMobile ? '/logo-gmobile.png' : isSafri ? '/logo-safri.jpg' : '';
+
     const adminLinks = [
         { to: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
         { to: '/admin/forecast', icon: Calendar, label: 'Proyección Flujo' },
@@ -42,17 +55,24 @@ export default function Sidebar({ onClose }: SidebarProps) {
 
     const workerLinks = [
         { to: '/worker', icon: LayoutDashboard, label: 'Cierre de Caja' },
+        { to: '/worker/purchases', icon: ShoppingCart, label: 'Compras' },
         { to: '/worker/history', icon: History, label: 'Mi Historial' },
     ];
 
     const links = profile?.role === 'admin' ? adminLinks : workerLinks;
 
     return (
-        <div className="flex flex-col h-full bg-fiori-header text-white w-64 shadow-xl relative z-50">
+        <div className={`flex flex-col h-full ${sidebarBg} text-white w-64 shadow-xl relative z-50`}>
             <div className="p-6 border-b border-gray-700 flex justify-between items-center">
-                <div>
-                    <h1 className="text-xl font-bold">{import.meta.env.VITE_APP_NAME || 'GMarket'}</h1>
-                    <p className="text-xs text-gray-400 mt-1">{profile?.role === 'admin' ? 'Administrador' : 'Encargado'}</p>
+                <div className="w-full flex flex-col items-center mb-2">
+                    {isCustomBranding ? (
+                        <img src={imgSrc} alt={appName} className="w-48 h-auto object-contain mb-4 drop-shadow-md" />
+                    ) : (
+                        <h1 className="text-xl font-bold mb-2">{appName}</h1>
+                    )}
+                    <p className={`text-sm ${isCustomBranding ? 'text-gray-400' : 'text-gray-300'}`}>
+                        {profile?.role === 'admin' ? 'Administrador' : 'Encargado'}
+                    </p>
                 </div>
                 {/* Close button for mobile within sidebar (optional but good context) */}
             </div>
@@ -70,8 +90,8 @@ export default function Sidebar({ onClose }: SidebarProps) {
                             className={clsx(
                                 "flex items-center gap-3 px-4 py-3 rounded-md transition-colors text-sm font-medium",
                                 isActive
-                                    ? "bg-fiori-blue text-white shadow-sm"
-                                    : "text-gray-300 hover:bg-gray-700 hover:text-white"
+                                    ? `${activeColor} text-white shadow-sm`
+                                    : `text-gray-300 ${hoverColor} hover:text-white`
                             )}
                         >
                             <Icon className="w-5 h-5" />

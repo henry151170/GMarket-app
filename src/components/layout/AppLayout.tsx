@@ -7,11 +7,25 @@ export default function AppLayout() {
     const location = useLocation();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+    // Dynamic Branding
+    const appName = import.meta.env.VITE_APP_NAME || 'GMarket';
+    const isGMarket = appName === 'GMarket';
+    const isGMobile = appName === 'Gmobile';
+    const isSafri = appName === 'Safri';
+    const isCustomBranding = isGMarket || isGMobile || isSafri;
+
+    const headerBg = isGMarket || isGMobile ? 'bg-gray-900' : isSafri ? 'bg-purple-950' : 'bg-fiori-header';
+    const imgSrc = isGMarket ? '/logo.png' : isGMobile ? '/logo-gmobile.png' : isSafri ? '/logo-safri.jpg' : '';
+
     return (
         <div className="flex h-screen bg-fiori-bg overflow-hidden flex-col md:flex-row">
             {/* Mobile Header */}
-            <div className="md:hidden bg-fiori-header text-white p-4 flex items-center justify-between shadow-md z-20">
-                <h1 className="font-bold text-lg">{import.meta.env.VITE_APP_NAME || 'GMarket'}</h1>
+            <div className={`md:hidden ${headerBg} text-white p-4 flex items-center justify-between shadow-md z-20`}>
+                {isCustomBranding ? (
+                    <img src={imgSrc} alt={appName} className="h-20 w-auto object-contain" />
+                ) : (
+                    <h1 className="font-bold text-lg">{appName}</h1>
+                )}
                 <button
                     onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                     className="p-2 hover:bg-white/10 rounded-md transition-colors"
