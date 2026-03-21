@@ -28,9 +28,10 @@ export default function Sidebar({ onClose }: SidebarProps) {
 
     // Dynamic Branding
     const appName = import.meta.env.VITE_APP_NAME || 'GMarket';
-    const isGMarket = appName === 'GMarket';
-    const isGMobile = appName === 'Gmobile';
-    const isSafri = appName === 'Safri';
+    const normalizedAppName = appName.toLowerCase();
+    const isGMarket = normalizedAppName === 'gmarket';
+    const isGMobile = normalizedAppName === 'gmobile';
+    const isSafri = normalizedAppName === 'safri';
     const isCustomBranding = isGMarket || isGMobile || isSafri;
 
     const sidebarBg = isGMarket || isGMobile ? 'bg-gray-900' : isSafri ? 'bg-purple-950' : 'bg-fiori-header';
