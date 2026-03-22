@@ -35,7 +35,6 @@ export default function Sidebar({ onClose }: SidebarProps) {
     const isCustomBranding = isGMarket || isGMobile || isSafri;
 
     const sidebarBg = isGMarket || isGMobile ? 'bg-gray-900' : isSafri ? 'bg-purple-950' : 'bg-fiori-header';
-    const activeColor = isGMarket ? 'bg-orange-500' : isGMobile ? 'bg-yellow-500' : isSafri ? 'bg-purple-600' : 'bg-fiori-blue';
     const hoverColor = isGMarket || isGMobile ? 'hover:bg-gray-800' : isSafri ? 'hover:bg-purple-900' : 'hover:bg-gray-700';
 
     const imgSrc = isGMarket ? '/logo.png' : isGMobile ? '/logo-gmobile.png' : isSafri ? '/logo-safri.jpg' : '';
@@ -63,6 +62,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
     const links = profile?.role === 'admin' ? adminLinks : workerLinks;
 
     const fallbackBg = isGMarket || isGMobile ? '#111827' : isSafri ? '#2e1065' : '#354a5f';
+    const activeHex = isGMarket ? '#f97316' : isGMobile ? '#eab308' : isSafri ? '#9333ea' : '#0a6ed1';
 
     return (
         <div className={`flex flex-col h-full ${sidebarBg} text-white w-64 shadow-xl relative z-50`} style={{ backgroundColor: fallbackBg }}>
@@ -93,9 +93,10 @@ export default function Sidebar({ onClose }: SidebarProps) {
                             className={clsx(
                                 "flex items-center gap-3 px-4 py-3 rounded-md transition-colors text-sm font-medium",
                                 isActive
-                                    ? `${activeColor} text-white shadow-sm`
+                                    ? `text-white shadow-sm`
                                     : `text-gray-300 ${hoverColor} hover:text-white`
                             )}
+                            style={isActive ? { backgroundColor: activeHex } : {}}
                         >
                             <Icon className="w-5 h-5" />
                             {link.label}

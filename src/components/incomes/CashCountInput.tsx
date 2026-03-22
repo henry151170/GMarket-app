@@ -6,11 +6,11 @@ interface CashCountInputProps {
 }
 
 const BILLS = [
-    { value: 200, label: 'S/ 200', color: 'text-pink-400' },
-    { value: 100, label: 'S/ 100', color: 'text-blue-400' },
-    { value: 50, label: 'S/ 50', color: 'text-orange-400' },
-    { value: 20, label: 'S/ 20', color: 'text-yellow-400' },
-    { value: 10, label: 'S/ 10', color: 'text-green-400' },
+    { value: 200, label: 'S/ 200', hex: '#f472b6' },
+    { value: 100, label: 'S/ 100', hex: '#60a5fa' },
+    { value: 50, label: 'S/ 50', hex: '#fb923c' },
+    { value: 20, label: 'S/ 20', hex: '#facc15' },
+    { value: 10, label: 'S/ 10', hex: '#4ade80' },
 ];
 
 const COINS = [
@@ -115,7 +115,7 @@ export default function CashCountInput({ onTotalChange }: CashCountInputProps) {
                             <div className="grid grid-cols-3 gap-3">
                                 {BILLS.map((item) => (
                                     <div key={item.value} className="bg-slate-800 p-3 rounded-lg border border-slate-700 flex flex-col items-center hover:border-slate-500 transition-colors" style={{ backgroundColor: '#1e293b' }}>
-                                        <span className={`text-[10px] font-bold mb-1 ${item.color}`}>{item.label}</span>
+                                        <span className="text-[10px] font-bold mb-1" style={{ color: item.hex }}>{item.label}</span>
                                         <input
                                             type="number"
                                             min="0"
