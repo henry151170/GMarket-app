@@ -55,6 +55,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
 
     const workerLinks = [
         { to: '/worker', icon: LayoutDashboard, label: 'Cierre de Caja' },
+        { to: '/worker/expenses/new', icon: Receipt, label: 'Gastos' },
         { to: '/worker/purchases', icon: ShoppingCart, label: 'Compras' },
         { to: '/worker/history', icon: History, label: 'Mi Historial' },
     ];
