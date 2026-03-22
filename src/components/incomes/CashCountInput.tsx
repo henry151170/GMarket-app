@@ -45,7 +45,8 @@ export default function CashCountInput({ onTotalChange }: CashCountInputProps) {
     }, [counts, onTotalChange]);
 
     const handleCountChange = (value: number, inputValue: string) => {
-        const count = inputValue === '' ? 0 : parseInt(inputValue);
+        // Permitir que el usuario borre el input dejándolo en 0 si está vacío
+        const count = inputValue === '' ? 0 : parseInt(inputValue, 10);
         if (isNaN(count)) return;
         setCounts(prev => ({ ...prev, [value]: count }));
     };
@@ -115,7 +116,7 @@ export default function CashCountInput({ onTotalChange }: CashCountInputProps) {
                                         <input
                                             type="number"
                                             min="0"
-                                            value={counts[item.value] === 0 ? '' : counts[item.value]}
+                                            value={counts[item.value] || ''}
                                             placeholder="-"
                                             className="no-spinner w-full text-center text-xl font-bold text-white bg-transparent border-none p-0 focus:ring-0 placeholder-slate-600 outline-none"
                                             onChange={(e) => handleCountChange(item.value, e.target.value)}
@@ -139,7 +140,7 @@ export default function CashCountInput({ onTotalChange }: CashCountInputProps) {
                                         <input
                                             type="number"
                                             min="0"
-                                            value={counts[item.value] === 0 ? '' : counts[item.value]}
+                                            value={counts[item.value] || ''}
                                             placeholder="-"
                                             className="no-spinner w-full text-center text-xl font-bold text-white bg-transparent border-none p-0 focus:ring-0 placeholder-slate-600 outline-none"
                                             onChange={(e) => handleCountChange(item.value, e.target.value)}

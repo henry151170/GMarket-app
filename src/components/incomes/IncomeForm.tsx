@@ -40,9 +40,9 @@ export default function IncomeForm(props: IncomeFormProps) {
         resolver: zodResolver(incomeSchema) as any,
         defaultValues: {
             fecha: new Date().toLocaleDateString('en-CA'),
-            totalFacturas: 0,
-            totalBoletas: 0,
-            totalNotas: 0,
+            totalFacturas: '' as any,
+            totalBoletas: '' as any,
+            totalNotas: '' as any,
             totalCosto: 0,
             totalGastos: 0,
             observaciones: '',
@@ -51,10 +51,10 @@ export default function IncomeForm(props: IncomeFormProps) {
             differenceNote: '',
             responsible_person: '',
             pagos: {
-                efectivo: 0,
-                yape: 0,
-                tarjeta: 0,
-                transferencia: 0,
+                efectivo: '' as any,
+                yape: '' as any,
+                tarjeta: '' as any,
+                transferencia: '' as any,
                 // efectivoUbicacion is optional, so undefined is implicit or we can explicit it
             }
         }
@@ -91,16 +91,33 @@ export default function IncomeForm(props: IncomeFormProps) {
                             else if (p.method === 'transfer') payments.transferencia = Number(p.amount);
                         });
 
+                        // Proteccion extra: Validar Notas explícitamente y limpiar NaN
+                        const safeTotalNotas = Number(data.total_notas_venta);
+                        const finalNotas = isNaN(safeTotalNotas) ? 0 : safeTotalNotas;
+
                         reset({
                             fecha: data.date,
-                            totalFacturas: Number(data.total_facturas),
-                            totalBoletas: Number(data.total_boletas),
-                            totalNotas: Number(data.total_notas_venta),
-                            totalCosto: Number(data.total_cost || 0),
+                            totalFacturas: Number(data.total_facturas) || 0,
+                            totalBoletas: Number(data.total_boletas) || 0,
+                            totalNotas: finalNotas, // Usar valor validado
+                            totalCosto: Number(data.total_cost) || 0,
                             // @ts-ignore
                             pagos: payments,
                             responsible_person: data.responsible_person
                         });
+
+                        // console.log("🔍 DEBUG: Datos cargados de DB: (Cleaned)");
+
+                    }
+                    if (data) {
+                        // Check for data integrity warning
+                        const dbTotal = Number(data.total_calculated) || (Number(data.total_facturas) + Number(data.total_boletas) + Number(data.total_notas_venta));
+                        const dbPayments = data.income_payments.reduce((sum: number, p: any) => sum + Number(p.amount), 0);
+
+                        // We can't easily check expenses here without fetching them, but we can log the diff
+                        if (Math.abs(dbTotal - dbPayments) > 5) {
+                            console.warn("⚠️ ALERTA: Diferencia significativa entre Total y Pagos en DB al cargar.");
+                        }
                     }
                 })
                 .catch(console.error)
@@ -108,16 +125,21 @@ export default function IncomeForm(props: IncomeFormProps) {
         }
     }, [id]);
 
-    const totalFacturas = watch('totalFacturas') || 0;
-    const totalBoletas = watch('totalBoletas') || 0;
-    const totalNotas = watch('totalNotas') || 0;
+    const parseNum = (val: any) => {
+        const parsed = Number(val);
+        return isNaN(parsed) ? 0 : parsed;
+    };
 
-    const pagoEfectivo = watch('pagos.efectivo') || 0;
-    const pagoYape = watch('pagos.yape') || 0;
-    const pagoTarjeta = watch('pagos.tarjeta') || 0;
-    const pagoTransferencia = watch('pagos.transferencia') || 0;
+    const totalFacturas = parseNum(watch('totalFacturas'));
+    const totalBoletas = parseNum(watch('totalBoletas'));
+    const totalNotas = parseNum(watch('totalNotas'));
 
-    const totalDia = Number(totalFacturas) + Number(totalBoletas) + Number(totalNotas);
+    const pagoEfectivo = parseNum(watch('pagos.efectivo'));
+    const pagoYape = parseNum(watch('pagos.yape'));
+    const pagoTarjeta = parseNum(watch('pagos.tarjeta'));
+    const pagoTransferencia = parseNum(watch('pagos.transferencia'));
+
+    const totalDia = totalFacturas + totalBoletas + totalNotas;
 
     // DAILY EXPENSES LOGIC
     const [dailyExpensesTotal, setDailyExpensesTotal] = useState(0);
@@ -133,7 +155,10 @@ export default function IncomeForm(props: IncomeFormProps) {
             .from('expenses')
             .select('*')
             .eq('date', selectedDate)
-            .eq('status', 'paid');
+            .eq('status', 'paid')
+            .eq('payment_method', 'cash')
+            .eq('cash_location', 'hand')
+            .neq('is_structural', true); // Exclude structural expenses (Planilla, Services) from simple cash count
 
         if (!error && data) {
             setDailyExpensesList(data);
@@ -150,14 +175,11 @@ export default function IncomeForm(props: IncomeFormProps) {
     const handleDeleteExpense = async (id: string) => {
         if (confirm('¿Eliminar este gasto?')) {
             await deleteExpense(id);
-            // Refresh logic will re-fetch and re-set total/form value
-            // But we need to call fetchDailyExpenses again.
-            // We can simpler call it here:
             setTimeout(() => fetchDailyExpenses(), 500);
         }
     };
 
-    const totalPagos = Number(pagoEfectivo) + Number(pagoYape) + Number(pagoTarjeta) + Number(pagoTransferencia) + dailyExpensesTotal;
+    const totalPagos = pagoEfectivo + pagoYape + pagoTarjeta + pagoTransferencia + dailyExpensesTotal;
     const diff = totalDia - totalPagos;
     const isBalanced = Math.abs(diff) < 0.01;
     // Store original date to check changes
@@ -185,7 +207,7 @@ export default function IncomeForm(props: IncomeFormProps) {
                 return;
             }
 
-            checkIncomeExists(selectedDate).then(exists => {
+            checkIncomeExists(selectedDate, id).then(exists => {
                 setAlreadyRegistered(exists);
             });
         }
@@ -200,7 +222,6 @@ export default function IncomeForm(props: IncomeFormProps) {
     const handleCashCountChange = useCallback((val: number) => {
         setValue('pagos.efectivo', val, { shouldDirty: true, shouldTouch: true });
     }, [setValue]);
-
     const isAdmin = profile?.role === 'admin';
 
     const onSubmit = async (data: IncomeFormData) => {
