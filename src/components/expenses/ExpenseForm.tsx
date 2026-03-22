@@ -8,9 +8,10 @@ interface ExpenseFormProps {
     onSuccess: () => void;
     onCancel: () => void;
     editId?: string | null;
+    isStructural?: boolean; // New Prop
 }
 
-export default function ExpenseForm({ onSuccess, onCancel, editId }: ExpenseFormProps) {
+export default function ExpenseForm({ onSuccess, onCancel, editId, isStructural = false }: ExpenseFormProps) {
     const { createExpense, updateExpense, getExpenseById, loading, error } = useExpenses();
     const { categories } = useExpenseCategories();
 
@@ -19,7 +20,7 @@ export default function ExpenseForm({ onSuccess, onCancel, editId }: ExpenseForm
     const [formData, setFormData] = useState<ExpenseFormData>({
         category: '', // Will update on load
         description: '',
-        amount: 0,
+        amount: '' as any,
         currency: 'PEN',
         date: new Date().toLocaleDateString('en-CA'),
         payment_method: 'cash',
@@ -78,7 +79,8 @@ export default function ExpenseForm({ onSuccess, onCancel, editId }: ExpenseForm
             ...formData,
             description: finalDescription,
             cash_location: finalCashLocation as any,
-            is_fixed: isFixedCategory
+            is_fixed: isFixedCategory,
+            is_structural: isStructural // Pass the prop value
         };
 
         let success = false;

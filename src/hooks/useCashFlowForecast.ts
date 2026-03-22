@@ -72,6 +72,7 @@ export function useCashFlowForecast() {
                 templates = templatesPromise.value.data as FixedExpenseTemplate[];
             }
 
+
             // Process B: Daily Incomes
             const incomeMap = new Map<string, number>();
             let recentIncomeSum = 0;
@@ -79,16 +80,25 @@ export function useCashFlowForecast() {
             const monthStartStr = format(monthStart, 'yyyy-MM-dd');
             const monthEndStr = format(monthEnd, 'yyyy-MM-dd');
 
+            console.log('🔍 DEBUG: Fetching daily_incomes...');
+            console.log('User ID:', user.id);
+            console.log('Fetch start date:', format(fetchStartDate, 'yyyy-MM-dd'));
+
             if (journalPromise.status === 'rejected') {
                 console.warn('Failed to fetch daily incomes', journalPromise.reason);
             } else if (journalPromise.value.data) {
+                console.log('✅ Daily incomes data received:', journalPromise.value.data);
+
                 journalPromise.value.data.forEach((entry: any) => {
                     const dateKey = entry.date;
                     const totalVenta = Number(entry.total_facturas || 0) + Number(entry.total_boletas || 0) + Number(entry.total_notas_venta || 0);
 
+                    console.log(`  Date: ${dateKey}, Total: ${totalVenta}`);
+
                     // 1. Populate Calendar Map (Current Month only)
                     if (dateKey >= monthStartStr && dateKey <= monthEndStr) {
                         incomeMap.set(dateKey, totalVenta);
+                        console.log(`    ✅ Added to incomeMap: ${dateKey} -> ${totalVenta}`);
                     }
 
                     // 2. Sum for Average (Last 15 days)
@@ -96,7 +106,13 @@ export function useCashFlowForecast() {
                         recentIncomeSum += totalVenta;
                     }
                 });
+
+                console.log('📊 Final incomeMap:', Object.fromEntries(incomeMap));
+                console.log('📊 Recent income sum (15 days):', recentIncomeSum);
+            } else {
+                console.log('❌ No data returned from daily_incomes');
             }
+
 
             // Calculate Average
             const calculatedAvg = recentIncomeSum / 15;

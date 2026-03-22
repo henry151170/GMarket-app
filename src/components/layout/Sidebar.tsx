@@ -62,8 +62,10 @@ export default function Sidebar({ onClose }: SidebarProps) {
 
     const links = profile?.role === 'admin' ? adminLinks : workerLinks;
 
+    const fallbackBg = isGMarket || isGMobile ? '#111827' : isSafri ? '#2e1065' : '#354a5f';
+
     return (
-        <div className={`flex flex-col h-full ${sidebarBg} text-white w-64 shadow-xl relative z-50`}>
+        <div className={`flex flex-col h-full ${sidebarBg} text-white w-64 shadow-xl relative z-50`} style={{ backgroundColor: fallbackBg }}>
             <div className="p-6 border-b border-gray-700 flex justify-between items-center">
                 <div className="w-full flex flex-col items-center mb-2">
                     {isCustomBranding ? (

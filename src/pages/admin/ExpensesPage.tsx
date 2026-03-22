@@ -266,6 +266,7 @@ export default function ExpensesPage() {
                                 onSuccess={handleSuccess}
                                 onCancel={() => setIsModalOpen(false)}
                                 editId={editId}
+                                isStructural={true} // ADMIN PANEL = STRUCTURAL
                             />
                         </div>
                     </div>

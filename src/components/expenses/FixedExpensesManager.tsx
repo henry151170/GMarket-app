@@ -9,7 +9,7 @@ interface FixedExpensesManagerProps {
 }
 
 export default function FixedExpensesManager({ onExpensesGenerated }: FixedExpensesManagerProps) {
-    const { fetchTemplates, createTemplate, deleteTemplate, generateExpensesForPeriod } = useFixedExpenses();
+    const { fetchTemplates, createTemplate, updateTemplate, deleteTemplate, generateExpensesForPeriod } = useFixedExpenses();
     const { categories, createCategory, updateCategory, deleteCategory } = useExpenseCategories();
     const { concepts, createConcept, updateConcept, deleteConcept } = useExpenseConcepts();
 
@@ -26,6 +26,8 @@ export default function FixedExpensesManager({ onExpensesGenerated }: FixedExpen
     const [editingConcept, setEditingConcept] = useState<{ id: string, name: string } | null>(null);
 
     // Form State
+    const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
+
     const [newTemplate, setNewTemplate] = useState<{
         title: string;
         amount: string;
@@ -61,22 +63,53 @@ export default function FixedExpensesManager({ onExpensesGenerated }: FixedExpen
         }
     }, [categories, concepts, isCreating]);
 
-    const handleCreate = async () => {
+    const handleCreateOrUpdate = async () => {
         if (!newTemplate.title || !newTemplate.amount) return;
 
-        const success = await createTemplate({
-            title: newTemplate.title,
-            amount: Number(newTemplate.amount),
-            category: newTemplate.category,
-            day_of_month: newTemplate.day_of_month,
-            currency: newTemplate.currency
-        });
+        let success = false;
+
+        if (editingTemplateId) {
+            success = await updateTemplate(editingTemplateId, {
+                title: newTemplate.title,
+                amount: Number(newTemplate.amount),
+                category: newTemplate.category,
+                day_of_month: newTemplate.day_of_month,
+                currency: newTemplate.currency
+            });
+        } else {
+            success = await createTemplate({
+                title: newTemplate.title,
+                amount: Number(newTemplate.amount),
+                category: newTemplate.category,
+                day_of_month: newTemplate.day_of_month,
+                currency: newTemplate.currency
+            });
+        }
 
         if (success) {
             setIsCreating(false);
+            setEditingTemplateId(null);
             setNewTemplate({ title: '', amount: '', category: '', day_of_month: 1, currency: 'PEN' });
             load();
         }
+    };
+
+    const startEditing = (t: FixedExpenseTemplate) => {
+        setNewTemplate({
+            title: t.title,
+            amount: t.amount.toString(),
+            category: t.category,
+            day_of_month: t.day_of_month,
+            currency: t.currency || 'PEN'
+        });
+        setEditingTemplateId(t.id);
+        setIsCreating(true);
+    };
+
+    const cancelEditing = () => {
+        setIsCreating(false);
+        setEditingTemplateId(null);
+        setNewTemplate({ title: '', amount: '', category: '', day_of_month: 1, currency: 'PEN' });
     };
 
     const handleDelete = async (id: string) => {
@@ -277,7 +310,7 @@ export default function FixedExpensesManager({ onExpensesGenerated }: FixedExpen
             {/* CREATE FORM */}
             {isCreating && (
                 <div className="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-100 animate-in fade-in slide-in-from-top-2">
-                    <h4 className="font-bold text-sm text-blue-800 mb-3">Nueva Plantilla</h4>
+                    <h4 className="font-bold text-sm text-blue-800 mb-3">{editingTemplateId ? 'Editar Plantilla' : 'Nueva Plantilla'}</h4>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div className="md:col-span-2">
                             <label className="block text-xs font-medium text-gray-600 mb-1 flex justify-between">
@@ -343,14 +376,14 @@ export default function FixedExpensesManager({ onExpensesGenerated }: FixedExpen
                         </div>
                         <div className="md:col-span-2 flex items-end gap-2">
                             <button
-                                onClick={handleCreate}
+                                onClick={handleCreateOrUpdate}
                                 disabled={!newTemplate.title || !newTemplate.amount}
                                 className="fiori-btn fiori-btn-primary flex-1 justify-center text-sm"
                             >
-                                <Save className="w-4 h-4 mr-2" /> Guardar
+                                <Save className="w-4 h-4 mr-2" /> {editingTemplateId ? 'Actualizar' : 'Guardar'}
                             </button>
                             <button
-                                onClick={() => setIsCreating(false)}
+                                onClick={cancelEditing}
                                 className="fiori-btn fiori-btn-secondary flex-1 justify-center text-sm"
                             >
                                 Cancelar
@@ -383,6 +416,13 @@ export default function FixedExpensesManager({ onExpensesGenerated }: FixedExpen
                             </div>
                             <div className="flex items-center gap-4">
                                 <span className="font-bold text-gray-700 text-sm">~ {t.currency === 'USD' ? '$' : 'S/'} {Number(t.amount).toFixed(2)}</span>
+                                <button
+                                    onClick={() => startEditing(t)}
+                                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                                    title="Editar plantilla"
+                                >
+                                    <Pencil className="w-4 h-4" />
+                                </button>
                                 <button
                                     onClick={() => handleDelete(t.id)}
                                     className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors opacity-0 group-hover:opacity-100"

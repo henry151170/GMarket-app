@@ -50,15 +50,15 @@ export function useFinancialHealth() {
             journal?.forEach(entry => {
                 let amount = Number(entry.amount);
 
-                if (entry.location === 'hand') hand += amount;
-                if (entry.location === 'bank') {
-                    // Apply Commission Logic same as Dashboard
-                    if (entry.type === 'income') {
-                        const desc = entry.description?.toLowerCase() || '';
-                        if (desc.includes('yape') || desc.includes('card') || desc.includes('transfer')) {
-                            amount = amount * 0.96;
-                        }
+                if (entry.location === 'hand') {
+                    // Match logic from useDashboard.ts:
+                    // Only include INCOME, OTHER_INCOME, and PURCHASE.
+                    // Exclude 'expense' (daily expenses) from Cash Hand.
+                    if (entry.type === 'income' || entry.type === 'other_income' || entry.type === 'purchase' || entry.type === 'structural_expense' || entry.type === 'expense') {
+                        hand += amount;
                     }
+                }
+                if (entry.location === 'bank') {
                     bank += amount;
                 }
             });
@@ -68,6 +68,7 @@ export function useFinancialHealth() {
                 .from('expenses')
                 .select('amount, date')
                 .eq('is_fixed', true)
+                .neq('status', 'pending') // Exclude pending
                 .gte('date', ninetyDaysAgo.toISOString());
 
             const totalFixed90 = fixedExpenses?.reduce((acc, curr) => acc + Number(curr.amount), 0) || 0;
@@ -97,6 +98,7 @@ export function useFinancialHealth() {
                 .from('expenses')
                 .select('amount')
                 .eq('is_fixed', false)
+                .neq('status', 'pending') // Exclude pending
                 .gte('date', thirtyDaysAgo.toISOString());
 
             const totalVarExp30 = variableExpenses?.reduce((acc, curr) => acc + Number(curr.amount), 0) || 0;

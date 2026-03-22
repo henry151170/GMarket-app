@@ -55,12 +55,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 .single();
 
             if (error) {
-                console.error('Error fetching profile:', error);
+                console.error('Error fetching profile for ID:', userId, error);
             } else {
+                console.log('Profile fetched successfully:', data);
                 setProfile(data as Profile);
             }
         } catch (err) {
-            console.error(err);
+            console.error('CRITICAL PROFILE FETCH ERROR:', err);
         } finally {
             setLoading(false);
         }

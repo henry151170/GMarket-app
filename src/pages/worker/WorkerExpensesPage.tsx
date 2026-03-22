@@ -17,8 +17,13 @@ export default function WorkerExpensesPage() {
     const loadData = async () => {
         setLoading(true);
         const data = await fetchExpenses();
-        // RLS will ensure we only get our own expenses
-        setExpenses(data);
+
+        // Guardar solo los registros del día actual
+        const today = new Date().toLocaleDateString('en-CA');
+        const todaysExpenses = data.filter(e => e.date === today);
+
+        // RLS will ensure we only get our own expenses, and we filter by today
+        setExpenses(todaysExpenses);
         setLoading(false);
     };
 
@@ -175,6 +180,7 @@ export default function WorkerExpensesPage() {
                                 onSuccess={handleSuccess}
                                 onCancel={() => setIsModalOpen(false)}
                                 editId={editId}
+                                isStructural={false} // WORKER PANEL = NON-STRUCTURAL (Day Expense)
                             />
                         </div>
                     </div>

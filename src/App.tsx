@@ -19,6 +19,7 @@ import SettingsPage from './pages/admin/SettingsPage';
 import ForecastPage from './pages/admin/ForecastPage';
 import WorkerExpensesPage from './pages/worker/WorkerExpensesPage';
 import WorkerHistoryPage from './pages/worker/WorkerHistoryPage';
+import WorkerPurchasesPage from './pages/worker/WorkerPurchasesPage';
 
 function RootRedirect() {
   const { user, profile, loading, signOut } = useAuth();
@@ -92,6 +93,7 @@ function App() {
               {/* Added Edit Route for Worker */}
               <Route path="incomes/edit/:id" element={<RegisterIncomePage />} />
               <Route path="expenses/new" element={<WorkerExpensesPage />} />
+              <Route path="purchases" element={<WorkerPurchasesPage />} />
               <Route path="history" element={<WorkerHistoryPage />} />
             </Route>
           </Route>

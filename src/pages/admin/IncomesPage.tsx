@@ -42,12 +42,22 @@ export default function IncomesPage() {
     };
 
     const handleResetAll = async () => {
-        if (!confirm("⚠️ ¿PELIGRO: ESTÁS SEGURO? ⚠️\n\nEsto eliminará TODO el historial (Ingresos, Gastos, Caja) y dejará el sistema como nuevo.\n\nNO se puede deshacer.")) return;
+        console.log('🔴 handleResetAll called');
 
-        const { error } = await supabase.rpc('reset_all_financial_data');
+        const confirmed = confirm("⚠️ ¿PELIGRO: ESTÁS SEGURO? ⚠️\n\nEsto eliminará TODO el historial (Ingresos, Gastos, Caja) y dejará el sistema como nuevo.\n\nNO se puede deshacer.");
+        console.log('User confirmed:', confirmed);
+
+        if (!confirmed) return;
+
+        console.log('Calling supabase.rpc(reset_all_financial_data)...');
+        const { data, error } = await supabase.rpc('reset_all_financial_data');
+        console.log('RPC result:', { data, error });
+
         if (error) {
+            console.error('❌ Error:', error);
             alert('Error: ' + error.message);
         } else {
+            console.log('✅ Success');
             alert('✅ Sistema reiniciado correctamente.');
             window.location.reload();
         }

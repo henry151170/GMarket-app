@@ -91,6 +91,7 @@ export function useIncomes() {
                 });
             }
 
+
             // 3. Insert Payments
             if (paymentsToInsert.length > 0) {
                 const { error: paymentsError } = await supabase
@@ -137,6 +138,31 @@ export function useIncomes() {
                     .in('reference_id', paymentIds);
             }
 
+            // 1.5. NEW: Delete Expenses for this Date (User Request)
+            // Fetch Income Date
+            const { data: income } = await supabase
+                .from('daily_incomes')
+                .select('date')
+                .eq('id', id)
+                .single();
+
+            if (income?.date) {
+                // Fetch Expenses IDs to clean up journal first
+                const { data: expenses } = await supabase
+                    .from('expenses')
+                    .select('id')
+                    .eq('date', income.date)
+                    .eq('user_id', user?.id); // Ensure we only delete own expenses or check role? Ideally date+user match.
+
+                if (expenses && expenses.length > 0) {
+                    const expenseIds = expenses.map(e => e.id);
+                    // Delete Journal entries for expenses
+                    await supabase.from('cash_journal').delete().in('reference_id', expenseIds);
+                    // Delete Expenses
+                    await supabase.from('expenses').delete().in('id', expenseIds);
+                }
+            }
+
             // 2. Delete Income (Cascades to payments)
             const { error } = await supabase
                 .from('daily_incomes')
@@ -171,7 +197,6 @@ export function useIncomes() {
         try {
             setLoading(true);
 
-            // For simplicity in this specialized app: Delete payments and recreate them
             // This ensures logic for totals/locations remains consistent without complex diffing
 
             // 1. Delete old payments (and their journal entries manually first)
@@ -227,15 +252,20 @@ export function useIncomes() {
         }
     }, []);
 
-    const checkIncomeExists = useCallback(async (date: string) => {
+    const checkIncomeExists = useCallback(async (date: string, excludeId?: string) => {
         if (!user) return false;
 
-        const { data } = await supabase
+        let query = supabase
             .from('daily_incomes')
             .select('id')
             .eq('date', date)
-            .eq('user_id', user.id)
-            .maybeSingle();
+            .eq('user_id', user.id);
+
+        if (excludeId) {
+            query = query.neq('id', excludeId);
+        }
+
+        const { data } = await query.maybeSingle();
 
         return !!data;
     }, [user]);

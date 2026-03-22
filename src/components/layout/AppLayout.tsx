@@ -18,10 +18,12 @@ export default function AppLayout() {
     const headerBg = isGMarket || isGMobile ? 'bg-gray-900' : isSafri ? 'bg-purple-950' : 'bg-fiori-header';
     const imgSrc = isGMarket ? '/logo.png' : isGMobile ? '/logo-gmobile.png' : isSafri ? '/logo-safri.jpg' : '';
 
+    const fallbackBg = isGMarket || isGMobile ? '#111827' : isSafri ? '#2e1065' : '#354a5f';
+
     return (
         <div className="flex h-screen bg-fiori-bg overflow-hidden flex-col md:flex-row">
             {/* Mobile Header */}
-            <div className={`md:hidden ${headerBg} text-white p-4 flex items-center justify-between shadow-md z-20`}>
+            <div className={`md:hidden ${headerBg} text-white p-4 flex items-center justify-between shadow-md z-20`} style={{ backgroundColor: fallbackBg }}>
                 {isCustomBranding ? (
                     <img src={imgSrc} alt={appName} className="h-20 w-auto object-contain" />
                 ) : (

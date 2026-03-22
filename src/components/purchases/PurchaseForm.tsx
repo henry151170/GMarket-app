@@ -25,7 +25,7 @@ export default function PurchaseForm({ onSuccess, onCancel, editId }: PurchaseFo
     const [supplierId, setSupplierId] = useState('');
     const [paymentMethod, setPaymentMethod] = useState('cash');
     const [notes, setNotes] = useState('');
-    const [items, setItems] = useState([{ id: Date.now(), product_name: '', quantity: 1, unit_price: 0 }]);
+    const [items, setItems] = useState<any[]>([{ id: Date.now(), product_name: '', quantity: 1, unit_price: '' }]);
 
     // Load data if editing
     useEffect(() => {
@@ -110,7 +110,7 @@ export default function PurchaseForm({ onSuccess, onCancel, editId }: PurchaseFo
     };
 
     const addItem = () => {
-        setItems([...items, { id: Date.now(), product_name: '', quantity: 1, unit_price: 0 }]);
+        setItems([...items, { id: Date.now(), product_name: '', quantity: 1, unit_price: '' }]);
     };
 
     const removeItem = (id: number) => {
@@ -126,7 +126,7 @@ export default function PurchaseForm({ onSuccess, onCancel, editId }: PurchaseFo
     };
 
     const calculateTotal = () => {
-        return items.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
+        return items.reduce((sum, item) => sum + (item.quantity * (Number(item.unit_price) || 0)), 0);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -272,7 +272,7 @@ export default function PurchaseForm({ onSuccess, onCancel, editId }: PurchaseFo
                                             placeholder="Monto"
                                             className="fiori-input w-full pl-6 text-sm text-right"
                                             value={item.unit_price}
-                                            onChange={e => updateItem(item.id, 'unit_price', parseFloat(e.target.value))}
+                                            onChange={e => updateItem(item.id, 'unit_price', e.target.value === '' ? '' : parseFloat(e.target.value))}
                                             required
                                         />
                                     </div>

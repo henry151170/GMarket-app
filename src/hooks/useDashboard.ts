@@ -41,118 +41,118 @@ export function useDashboard(dateRange?: { start: string; end: string }) {
             const today = new Date();
 
             // Define metrics window
-            // If range provided -> Use it. Else -> Current Month.
             const metricsStart = dateRange?.start
                 ? dateRange.start
                 : new Date(today.getFullYear(), today.getMonth(), 1).toISOString();
 
             const metricsEnd = dateRange?.end
-                ? dateRange.end + 'T23:59:59' // Include end date fully
+                ? dateRange.end + 'T23:59:59'
                 : new Date().toISOString();
 
             const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
 
-            // 1. Fetch entire Journal (optimize later with group by RPC if needed)
-            // NOTE: Using explicit column list instead of * to avoid schema cache issues
-            const { data: journal, error } = await supabase
+            // 1. Fetch CASH JOURNAL (For Balances - Real money)
+            const { data: journal, error: journalError } = await supabase
                 .from('cash_journal')
-                .select('id, date, amount, type, location, description, user_id, currency, created_at');
+                .select('amount, type, location, currency, date');
 
-            if (error) throw error;
+            if (journalError) throw journalError;
 
-            console.log('🔍 DEBUG: Raw journal data from DB:', journal);
-            console.log('🔍 DEBUG: metricsStart:', metricsStart, 'metricsEnd:', metricsEnd);
+            // 2. Fetch DAILY INCOMES (For Sales Stats - Gross value)
+            const { data: incomes, error: incomesError } = await supabase
+                .from('daily_incomes')
+                .select('date, total_calculated, total_facturas, total_boletas, total_notas_venta')
+                .gte('date', metricsStart)
+                .lte('date', metricsEnd);
 
+            if (incomesError) throw incomesError;
+
+            // 2.1 Fetch TODAY'S Incomes specifically (if not in range, though usually is)
+            const { data: todayIncomes, error: todayError } = await supabase
+                .from('daily_incomes')
+                .select('total_calculated, total_facturas, total_boletas, total_notas_venta')
+                .eq('date', startOfDay.split('T')[0]);
+
+            if (todayError) throw todayError;
+
+            // --- CALCULATE BALANCES (From Journal) ---
             let hand = 0;
             let bank = 0;
             let bankUSD = 0;
-            let periodIncome = 0;
-            let periodNet = 0;
-            let incToday = 0;
-
-            const dailyMap = new Map<string, number>();
-
-            // For chart: If specific range, fill those days. If month, fill month.
-            // Simplified: Just map existing data in range, don't zero-fill everything (chart handles gaps)
-            // Or better: auto-fill range for clean chart.
-            // Let's stick to mapping actual data for now to avoid date math complexity in hook.
 
             journal?.forEach(entry => {
-                let amount = Number(entry.amount);
+                const amount = Number(entry.amount);
                 const currency = entry.currency || 'PEN';
 
-                // Apply 4% commission for Yape, Card, and Transfer
-                // Condition: Type is income, Location is bank (implied by method logic, but explicit check is safer),
-                // and description contains keywords.
-                if (currency === 'PEN' && entry.type === 'income' && entry.location === 'bank') {
-                    const desc = entry.description?.toLowerCase() || '';
-                    if (desc.includes('yape') || desc.includes('card') || desc.includes('transfer')) {
-                        amount = amount * 0.96;
-                    }
-                }
-
-                // Total Balances (ALWAYS Accumulated All-Time)
                 if (entry.location === 'hand') {
-                    // Assume Hand is PEN unless explicitly USD? 
-                    // For simplicity, let's keep Hand as single currency or PEN.
-                    hand += amount;
+                    // Hand Balance: Income + Other + Structural - Purchase (Expenses usually separate but let's follow prev logic)
+                    // Previous logic: Income, Other, Purchase, Structural. 
+                    if (['income', 'other_income', 'purchase', 'structural_expense'].includes(entry.type)) {
+                        hand += amount;
+                    }
+                    if (entry.type === 'expense') {
+                        hand += amount; // Expenses are negative in journal
+                    }
                 }
 
                 if (entry.location === 'bank') {
-                    if (currency === 'USD') {
-                        bankUSD += amount;
-                    } else {
-                        bank += amount; // PEN
-                    }
-                }
-
-                // Period Stats (Filtered by Date Range)
-                // Extract date-only string for comparison
-                const entryDateOnly = entry.date.split('T')[0];
-                const metricsStartDate = metricsStart.split('T')[0];
-                const metricsEndDate = metricsEnd.split('T')[0];
-
-                if (entryDateOnly >= metricsStartDate && entryDateOnly <= metricsEndDate) {
-                    if (entry.type === 'income') {
-                        // Income aggregation (usually PEN)
-                        if (currency === 'PEN') {
-                            periodIncome += amount;
-                            // Daily Aggregation
-                            const current = dailyMap.get(entryDateOnly) || 0;
-                            dailyMap.set(entryDateOnly, current + amount);
-                        }
-                    }
-                    if (entry.type === 'income' || entry.type === 'expense') {
-                        if (currency === 'PEN') periodNet += amount;
-                    }
-                }
-
-                // Today Stats (Always Today)
-                if (entry.date >= startOfDay && entry.type === 'income' && currency === 'PEN') {
-                    incToday += amount;
+                    if (currency === 'USD') bankUSD += amount;
+                    else bank += amount;
                 }
             });
 
-            // Convert map to array sorted by date
-            const dailyIncome = Array.from(dailyMap.entries())
+            // --- CALCULATE SALES STATS (From Daily Incomes) ---
+            let periodIncome = 0;
+            const dailyMap = new Map<string, number>();
+
+            incomes?.forEach(i => {
+                // Determine total for this record
+                let amt = Number(i.total_calculated);
+                if (!amt) amt = Number(i.total_facturas || 0) + Number(i.total_boletas || 0) + Number(i.total_notas_venta || 0);
+
+                periodIncome += amt;
+                const d = i.date;
+                dailyMap.set(d, (dailyMap.get(d) || 0) + amt);
+            });
+
+            // Calculate Net Profit (Utilidad) for Period
+            // This requires Expenses too.
+            // Simplified: Use Journal for Net Profit? Or Incomes - Expenses?
+            // "Net Profit Month" usually means P&L. 
+            // Let's use Journal for P&L flow (Income - Expenses) within the period.
+            let periodNet = 0;
+            // Re-scan journal for period flow
+            journal?.forEach(entry => {
+                const d = entry.date.split('T')[0];
+                if (d >= metricsStart.split('T')[0] && d <= metricsEnd.split('T')[0] && (entry.currency || 'PEN') === 'PEN') {
+                    if (['income', 'expense', 'other_income', 'purchase', 'structural_expense'].includes(entry.type)) {
+                        periodNet += Number(entry.amount);
+                    }
+                }
+            });
+
+
+            // Today's Income (Gross)
+            let incToday = 0;
+            todayIncomes?.forEach(i => {
+                let amt = Number(i.total_calculated);
+                if (!amt) amt = Number(i.total_facturas || 0) + Number(i.total_boletas || 0) + Number(i.total_notas_venta || 0);
+                incToday += amt;
+            });
+
+            const dailyIncomeArray = Array.from(dailyMap.entries())
                 .map(([date, amount]) => ({ date, amount }))
                 .sort((a, b) => a.date.localeCompare(b.date));
-
-            console.log('🔍 DEBUG: Final stats calculated:');
-            console.log('  - periodIncome:', periodIncome);
-            console.log('  - hand:', hand);
-            console.log('  - bank:', bank);
-            console.log('  - dailyIncome array:', dailyIncome);
 
             setStats({
                 cashHand: hand,
                 cashBank: bank,
                 cashBankUSD: bankUSD,
                 totalBalance: hand + bank,
-                incomeMonth: periodIncome, // Renamed in UI to "Ingresos del Periodo"
-                netProfitMonth: periodNet, // Renamed in UI to "Utilidad (Periodo)"
+                incomeMonth: periodIncome,
+                netProfitMonth: periodNet,
                 incomeToday: incToday,
-                dailyIncome,
+                dailyIncome: dailyIncomeArray,
                 loading: false
             });
 

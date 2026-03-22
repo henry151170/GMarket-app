@@ -20,7 +20,7 @@ export default function OtherIncomesPage() {
     const { register, handleSubmit, reset, watch } = useForm<FormData>({
         defaultValues: {
             fecha: new Date().toLocaleDateString('en-CA'),
-            monto: 0,
+            monto: '' as any,
             descripcion: '',
             moneda: 'PEN'
         }
@@ -47,7 +47,7 @@ export default function OtherIncomesPage() {
             await registerOtherIncome(data);
             reset({
                 fecha: new Date().toLocaleDateString('en-CA'),
-                monto: 0,
+                monto: '' as any,
                 descripcion: '',
                 moneda: 'PEN',
                 payment_method: 'cash'
@@ -119,7 +119,7 @@ export default function OtherIncomesPage() {
                                 <label className="block text-sm font-medium text-gray-700">Monto ({selectedCurrency === 'USD' ? '$' : 'S/'})</label>
                                 <input
                                     type="number" step="0.01" min="0"
-                                    {...register('monto', { required: true, min: 0 })}
+                                    {...register('monto', { required: true, min: 0, valueAsNumber: true })}
                                     className="fiori-input mt-1"
                                     placeholder="0.00"
                                 />

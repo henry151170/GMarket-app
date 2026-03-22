@@ -11,6 +11,7 @@ export interface Expense {
     payment_method: 'cash' | 'yape' | 'card' | 'transfer';
     cash_location?: 'hand' | 'bank';
     is_fixed: boolean;
+    is_structural: boolean; // New field
     user_id: string;
     created_at: string;
     status: 'paid' | 'pending';
@@ -30,6 +31,7 @@ export interface ExpenseFormData {
     payment_method: string;
     cash_location?: string;
     is_fixed: boolean;
+    is_structural?: boolean; // New field
 }
 
 export function useExpenses() {
@@ -55,7 +57,8 @@ export function useExpenses() {
                     cash_location: data.payment_method === 'cash' ? data.cash_location : null,
                     is_fixed: data.is_fixed,
                     user_id: user.id,
-                    status: 'paid' // Explicitly set to paid
+                    status: 'paid', // Explicitly set to paid
+                    is_structural: data.is_structural ?? false // Default to false
                 });
 
             if (insertError) throw insertError;
@@ -135,10 +138,11 @@ export function useExpenses() {
                     date: data.date,
                     payment_method: data.payment_method,
                     cash_location: data.payment_method === 'cash' ? data.cash_location : null,
-                    is_fixed: data.is_fixed
+                    is_fixed: data.is_fixed,
+                    is_structural: data.is_structural ?? false // Update flag
                 })
                 .eq('id', id)
-                .select('status') // Fetch status to be sure
+                .select('status, is_structural') // Fetch status and structural flag
                 .single();
 
             if (updateError) throw updateError;
@@ -151,13 +155,15 @@ export function useExpenses() {
                     loc = data.cash_location;
                 }
 
+                const journalType = updatedExpense.is_structural ? 'structural_expense' : 'expense';
+
                 const { error: journalError } = await supabase
                     .from('cash_journal')
                     .insert({
                         date: data.date,
                         location: loc,
                         amount: -data.amount, // Expense is negative
-                        type: 'expense',
+                        type: journalType,
                         reference_id: id,
                         description: 'Gasto: ' + data.category,
                         currency: data.currency || 'PEN'
@@ -181,61 +187,20 @@ export function useExpenses() {
     const toggleExpenseStatus = async (id: string, newStatus: 'paid' | 'pending') => {
         setLoading(true);
         try {
-            // 1. Update status
+            // 1. Update status AND force is_structural=true if paying
+            // This ensures manual expenses or worker expenses become deductible when approved/paid
+            // The DB trigger 'sync_expense_to_journal' will handle the journal entry creation/deletion automatically.
+            const updateData: any = { status: newStatus };
+            if (newStatus === 'paid') {
+                updateData.is_structural = true;
+            }
+
             const { error: updateError } = await supabase
                 .from('expenses')
-                .update({ status: newStatus })
+                .update(updateData)
                 .eq('id', id);
 
             if (updateError) throw updateError;
-
-            // 2. Handle Cash Journal Effects
-            if (newStatus === 'pending') {
-                // Remove from journal (money hasn't left)
-                const { error: deleteJournal } = await supabase
-                    .from('cash_journal')
-                    .delete()
-                    .eq('reference_id', id)
-                    .eq('type', 'expense');
-                if (deleteJournal) throw deleteJournal;
-            } else {
-                // Add to journal (money paid)
-                // Need to fetch details to know amount/location
-
-                // Note: 'expenses' state might not be accessible inside this function if it's not in the closure correctly or stale.
-                // Safest to fetch or accept expense object. But user interaction comes from list where we have the object.
-                // Let's fetch to be safe and atomic.
-                const { data: expense, error: fetchError } = await supabase
-                    .from('expenses')
-                    .select('*')
-                    .eq('id', id)
-                    .single();
-
-                if (fetchError || !expense) throw fetchError || new Error("Expense not found");
-
-                let loc = 'bank';
-                if (expense.payment_method === 'cash' && expense.cash_location) {
-                    loc = expense.cash_location;
-                }
-
-                // Check if already exists to avoid double deduction?
-                // The delete logic above handles the pending transition.
-                // For 'paid', we insert.
-                const { error: insertJournal } = await supabase
-                    .from('cash_journal')
-                    .insert({
-                        date: expense.date,
-                        location: loc,
-                        amount: -expense.amount,
-                        type: 'expense',
-                        reference_id: id,
-                        description: 'Expense: ' + expense.category,
-                        currency: expense.currency || 'PEN'
-                    });
-
-                if (insertJournal) throw insertJournal;
-            }
-
             return true;
         } catch (err: any) {
             console.error('Error toggling status:', err);
@@ -268,9 +233,36 @@ export function useExpenses() {
     const deleteAllExpenses = async () => {
         setLoading(true);
         try {
+            // Priority 1: Try Fast RPC
             const { data, error } = await supabase.rpc('reset_expenses');
-            if (error) throw error;
-            if (data === false) throw new Error('La función de base de datos devolvió false (error interno).');
+
+            if (!error && data === true) {
+                return { success: true };
+            }
+
+            console.warn('RPC reset_expenses failed or returned false, trying manual fallback...', error);
+
+            // Priority 2: Manual Fallback (Fetch & Delete)
+            const { data: allExpenses, error: fetchError } = await supabase
+                .from('expenses')
+                .select('id')
+                .limit(1000);
+
+            if (fetchError) throw fetchError;
+
+            if (allExpenses && allExpenses.length > 0) {
+                // Delete in batches or loops
+                const ids = allExpenses.map(e => e.id);
+
+                // Note: Deleteing expenses will trigger the journal deletion automatically via DB triggers
+                const { error: deleteError } = await supabase
+                    .from('expenses')
+                    .delete()
+                    .in('id', ids);
+
+                if (deleteError) throw deleteError;
+            }
+
             return { success: true };
         } catch (err: any) {
             console.error('Error resetting expenses:', err);

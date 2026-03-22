@@ -86,7 +86,10 @@ export default function CashCountInput({ onTotalChange }: CashCountInputProps) {
 
             {/* Dark Panel Content */}
             {isOpen && (
-                <div className="p-4 bg-slate-900 text-white animate-in fade-in slide-in-from-top-2 duration-200">
+                <div
+                    className="p-4 bg-slate-900 text-white animate-in fade-in slide-in-from-top-2 duration-200"
+                    style={{ backgroundColor: '#0f172a', color: '#ffffff' }}
+                >
 
                     {/* Add local style to hide spinners */}
                     <style>{`
@@ -111,7 +114,7 @@ export default function CashCountInput({ onTotalChange }: CashCountInputProps) {
                             {/* Changed to grid-cols-3 to widen cards */}
                             <div className="grid grid-cols-3 gap-3">
                                 {BILLS.map((item) => (
-                                    <div key={item.value} className="bg-slate-800 p-3 rounded-lg border border-slate-700 flex flex-col items-center hover:border-slate-500 transition-colors">
+                                    <div key={item.value} className="bg-slate-800 p-3 rounded-lg border border-slate-700 flex flex-col items-center hover:border-slate-500 transition-colors" style={{ backgroundColor: '#1e293b' }}>
                                         <span className={`text-[10px] font-bold mb-1 ${item.color}`}>{item.label}</span>
                                         <input
                                             type="number"
@@ -135,8 +138,8 @@ export default function CashCountInput({ onTotalChange }: CashCountInputProps) {
                             </div>
                             <div className="grid grid-cols-3 gap-3">
                                 {COINS.map((item) => (
-                                    <div key={item.value} className="bg-slate-800 p-3 rounded-lg border border-slate-700 flex flex-col items-center hover:border-slate-500 transition-colors">
-                                        <span className="text-slate-400 text-[10px] font-medium mb-1">{item.label}</span>
+                                    <div key={item.value} className="bg-slate-800 p-3 rounded-lg border border-slate-700 flex flex-col items-center hover:border-slate-500 transition-colors" style={{ backgroundColor: '#1e293b' }}>
+                                        <span className="text-slate-400 text-[10px] font-medium mb-1" style={{ color: '#94a3b8' }}>{item.label}</span>
                                         <input
                                             type="number"
                                             min="0"

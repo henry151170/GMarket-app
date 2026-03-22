@@ -89,6 +89,7 @@ export function useReports() {
             const { data: expenses, error: expensesError } = await supabase
                 .from('expenses')
                 .select('date, amount, payment_method, is_fixed')
+                .neq('status', 'pending') // Exclude pending expenses (templates)
                 .gte('date', startDate)
                 .lte('date', endDate);
 
@@ -116,7 +117,7 @@ export function useReports() {
             // 4. Fetch Other Incomes
             const { data: otherIncomes, error: otherIncomesError } = await supabase
                 .from('other_incomes')
-                .select('date, amount')
+                .select('date, amount, payment_method')
                 .gte('date', startDate)
                 .lte('date', endDate);
 
@@ -225,20 +226,20 @@ export function useReports() {
                 };
                 current.expense += amt;
 
-                // Deduct from specific method
-                if (e.payment_method === 'cash') {
-                    incomeMethodBreakdown.cash_hand -= amt;
-                    current.cash_hand -= amt;
-                } else if (e.payment_method === 'yape') {
-                    incomeMethodBreakdown.yape -= amt;
-                    current.yape -= amt;
-                } else if (e.payment_method === 'card') {
-                    incomeMethodBreakdown.card -= amt;
-                    current.card -= amt;
-                } else if (e.payment_method === 'transfer') {
-                    incomeMethodBreakdown.transfer -= amt;
-                    current.transfer -= amt;
-                }
+                // Deduct from specific method (REMOVED per user request)
+                // if (e.payment_method === 'cash') {
+                //     incomeMethodBreakdown.cash_hand -= amt;
+                //     current.cash_hand -= amt;
+                // } else if (e.payment_method === 'yape') {
+                //     incomeMethodBreakdown.yape -= amt;
+                //     current.yape -= amt;
+                // } else if (e.payment_method === 'card') {
+                //     incomeMethodBreakdown.card -= amt;
+                //     current.card -= amt;
+                // } else if (e.payment_method === 'transfer') {
+                //     incomeMethodBreakdown.transfer -= amt;
+                //     current.transfer -= amt;
+                // }
 
                 statsMap.set(e.date, current);
             });
@@ -254,26 +255,53 @@ export function useReports() {
                 };
                 current.purchase += amt;
 
-                // Deduct from specific method
-                if (p.payment_method === 'cash') {
-                    incomeMethodBreakdown.cash_hand -= amt;
-                    current.cash_hand -= amt;
-                } else if (p.payment_method === 'yape') {
-                    incomeMethodBreakdown.yape -= amt;
-                    current.yape -= amt;
-                } else if (p.payment_method === 'card') {
-                    incomeMethodBreakdown.card -= amt;
-                    current.card -= amt;
-                } else if (p.payment_method === 'transfer') {
-                    incomeMethodBreakdown.transfer -= amt;
-                    current.transfer -= amt;
-                }
+                // Deduct from specific method (REMOVED per user request)
+                // if (p.payment_method === 'cash') {
+                //     incomeMethodBreakdown.cash_hand -= amt;
+                //     current.cash_hand -= amt;
+                // } else if (p.payment_method === 'yape') {
+                //     incomeMethodBreakdown.yape -= amt;
+                //     current.yape -= amt;
+                // } else if (p.payment_method === 'card') {
+                //     incomeMethodBreakdown.card -= amt;
+                //     current.card -= amt;
+                // } else if (p.payment_method === 'transfer') {
+                //     incomeMethodBreakdown.transfer -= amt;
+                //     current.transfer -= amt;
+                // }
 
                 statsMap.set(p.date, current);
             });
 
             otherIncomes?.forEach(o => {
-                totalOtherIncome += Number(o.amount);
+                const amt = Number(o.amount);
+                totalOtherIncome += amt;
+
+                // Add to breakdown
+                if (o.payment_method === 'cash') incomeMethodBreakdown.cash_hand += amt;
+                else if (o.payment_method === 'yape') incomeMethodBreakdown.yape += amt;
+                else if (o.payment_method === 'card') incomeMethodBreakdown.card += amt;
+                else if (o.payment_method === 'transfer') incomeMethodBreakdown.transfer += amt;
+
+                const current = statsMap.get(o.date) || {
+                    income: 0, expense: 0, purchase: 0, cost_of_sales: 0,
+                    cash_hand: 0, yape: 0, card: 0, transfer: 0
+                };
+
+                // Add to daily stats breakdown
+                if (o.payment_method === 'cash') current.cash_hand += amt;
+                else if (o.payment_method === 'yape') current.yape += amt;
+                else if (o.payment_method === 'card') current.card += amt;
+                else if (o.payment_method === 'transfer') current.transfer += amt;
+
+                // Add to income? 
+                // Decision: keep total_income as just daily_incomes (Core Business) or Total?
+                // Reports typically separate Core vs Other. 
+                // But for Cash Flow logic (statsMap), we might want it. 
+                // Let's keep 'income' as Core Business Income (Daily Incomes) to match 'total_income'.
+                // 'totalOtherIncome' is separate.
+
+                statsMap.set(o.date, current);
             });
 
             // Calculate Commissions (4% of Card + Yape - GROSS or NET? Usually commissions are on Gross Income)

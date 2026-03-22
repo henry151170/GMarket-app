@@ -28,6 +28,9 @@ export default function Login() {
             // Navigation is now handled by useEffect when user state updates
         } catch (err: any) {
             console.error('Login Error Details:', err);
+            console.log('Error Code:', err.code);
+            console.log('Error Hint:', err.hint);
+            console.log('Error Details:', err.details);
             setError(err.message || 'Error al iniciar sesión');
         } finally {
             setLoading(false);

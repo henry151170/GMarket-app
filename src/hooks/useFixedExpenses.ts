@@ -72,6 +72,24 @@ export function useFixedExpenses() {
         }
     };
 
+    const updateTemplate = async (id: string, updates: Partial<FixedExpenseTemplate>) => {
+        setLoading(true);
+        try {
+            const { error } = await supabase
+                .from('fixed_expense_templates')
+                .update(updates)
+                .eq('id', id);
+
+            if (error) throw error;
+            return true;
+        } catch (err: any) {
+            setError(err.message);
+            return false;
+        } finally {
+            setLoading(false);
+        }
+    };
+
     // Helper to generate pending expenses for a given month
     const generateExpensesForPeriod = async (month: number, year: number) => {
         setLoading(true);
@@ -106,6 +124,7 @@ export function useFixedExpenses() {
                     payment_method: 'cash', // Default placeholder, user must update when paid
                     cash_location: 'hand',
                     is_fixed: true,
+                    is_structural: true, // Fixed expenses are structural (deductible)
                     status: 'pending', // Always pending initially so user confirms payment
                     template_id: t.id,
                     user_id: user.id
@@ -129,6 +148,7 @@ export function useFixedExpenses() {
     return {
         fetchTemplates,
         createTemplate,
+        updateTemplate,
         deleteTemplate,
         generateExpensesForPeriod,
         loading,
