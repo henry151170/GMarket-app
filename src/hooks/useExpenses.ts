@@ -76,16 +76,7 @@ export function useExpenses() {
         try {
             setLoading(true);
 
-            // 1. Delete associated cash_journal entry
-            const { error: journalError } = await supabase
-                .from('cash_journal')
-                .delete()
-                .eq('reference_id', id)
-                .eq('type', 'expense');
-
-            if (journalError) throw journalError;
-
-            // 2. Delete expense
+            // 1. Delete expense (DB triggers will auto-delete the cash_journal entry)
             const { error } = await supabase.from('expenses').delete().eq('id', id);
             if (error) throw error;
             return true;
