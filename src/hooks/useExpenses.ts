@@ -118,17 +118,7 @@ export function useExpenses() {
         setLoading(true);
         setError(null);
         try {
-            // 1. Delete old cash_journal entry
-            // We do this to ensure we don't duplicate or have stale data. 
-            // We will re-create it manually after update since triggers don't fire on update.
-            await supabase
-                .from('cash_journal')
-                .delete()
-                .eq('reference_id', id)
-                .eq('type', 'expense');
-
-            // 2. Update Expense
-            const { data: updatedExpense, error: updateError } = await supabase
+            const { error: updateError } = await supabase
                 .from('expenses')
                 .update({
                     category: data.category,
@@ -141,36 +131,9 @@ export function useExpenses() {
                     is_fixed: data.is_fixed,
                     is_structural: data.is_structural ?? false // Update flag
                 })
-                .eq('id', id)
-                .select('status, is_structural') // Fetch status and structural flag
-                .single();
+                .eq('id', id);
 
             if (updateError) throw updateError;
-
-            // 3. Re-create Cash Journal Entry (ONLY IF PAID)
-            // If status is 'pending', we just deleted the old journal (correct) and don't insert a new one (correct).
-            if (updatedExpense.status === 'paid') {
-                let loc = 'bank';
-                if (data.payment_method === 'cash' && data.cash_location) {
-                    loc = data.cash_location;
-                }
-
-                const journalType = updatedExpense.is_structural ? 'structural_expense' : 'expense';
-
-                const { error: journalError } = await supabase
-                    .from('cash_journal')
-                    .insert({
-                        date: data.date,
-                        location: loc,
-                        amount: -data.amount, // Expense is negative
-                        type: journalType,
-                        reference_id: id,
-                        description: 'Gasto: ' + data.category,
-                        currency: data.currency || 'PEN'
-                    });
-
-                if (journalError) throw journalError;
-            }
 
             return true;
         } catch (err: any) {
