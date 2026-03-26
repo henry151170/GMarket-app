@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Calendar, Edit } from 'lucide-react';
 import { useIncomes, type DailyIncome } from '../../hooks/useIncomes';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
 
 export default function WorkerHistoryPage() {
     const { fetchIncomes } = useIncomes();
@@ -18,26 +17,17 @@ export default function WorkerHistoryPage() {
         setLoading(true);
         // RLS restricts this to only my incomes
         const data = await fetchIncomes();
-        setIncomes(data);
+        
+        // Filter to only show today's records as requested by user
+        const today = new Date().toLocaleDateString('en-CA');
+        const todaysIncomes = data.filter((income) => income.date === today);
+        
+        setIncomes(todaysIncomes);
         setLoading(false);
     };
 
     const formatMoney = (amount: number) => {
         return `S/ ${amount.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`;
-    };
-
-    const handleResetAll = async () => {
-        // Security check: Verify logic since only Admins should usually do this.
-        // But per request, we enable it here.
-        if (!confirm("⚠️ ¿PELIGRO: ESTÁS SEGURO? ⚠️\n\nEsto eliminará TODO el historial (Ingresos, Gastos, Caja) y dejará el sistema como nuevo.\n\nNO se puede deshacer.")) return;
-
-        const { error } = await supabase.rpc('reset_all_financial_data');
-        if (error) {
-            alert('Error: ' + error.message);
-        } else {
-            alert('✅ Sistema reiniciado correctamente.');
-            window.location.reload();
-        }
     };
 
     if (loading) return <div className="p-10 text-center">Cargando historial...</div>;
@@ -46,13 +36,7 @@ export default function WorkerHistoryPage() {
         <div className="space-y-6">
             <div>
                 <h1 className="text-2xl font-bold text-fiori-header">Mi Historial</h1>
-                <p className="text-fiori-text-light">Registro de tus cierres de caja diarios</p>
-                <button
-                    onClick={handleResetAll}
-                    className="mt-2 text-xs text-red-500 hover:text-red-700 underline decoration-dotted"
-                >
-                    (Reseteo Total - Solo usar en Emergencia)
-                </button>
+                <p className="text-fiori-text-light">Registro de tus cierres de caja de hoy</p>
             </div>
 
             <div className="bg-white rounded-lg shadow-card overflow-hidden">
