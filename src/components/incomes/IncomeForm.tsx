@@ -141,45 +141,86 @@ export default function IncomeForm(props: IncomeFormProps) {
 
     const totalDia = totalFacturas + totalBoletas + totalNotas;
 
-    // DAILY EXPENSES LOGIC
-    const [dailyExpensesTotal, setDailyExpensesTotal] = useState(0);
-    const [dailyExpensesList, setDailyExpensesList] = useState<any[]>([]);
-    const [showExpenses, setShowExpenses] = useState(false);
+    // DAILY OUTFLOWS LOGIC (Gastos + Compras)
+    const [dailyOutflowsTotal, setDailyOutflowsTotal] = useState(0);
+    const [dailyOutflowsList, setDailyOutflowsList] = useState<any[]>([]);
+    const [showOutflows, setShowOutflows] = useState(false);
     const { deleteExpense } = useExpenses();
     const selectedDate = watch('fecha');
 
-    const fetchDailyExpenses = useCallback(async () => {
+    const fetchDailyOutflows = useCallback(async () => {
         if (!selectedDate) return;
 
-        const { data, error } = await supabase
+        // 1. Fetch Expenses
+        const { data: expensesData, error: expensesError } = await supabase
             .from('expenses')
             .select('*')
             .eq('date', selectedDate)
             .eq('status', 'paid')
             .eq('payment_method', 'cash')
             .eq('cash_location', 'hand')
-            .neq('is_structural', true); // Exclude structural expenses (Planilla, Services) from simple cash count
+            .neq('is_structural', true);
 
-        if (!error && data) {
-            setDailyExpensesList(data);
-            const total = data.reduce((sum, item) => sum + Number(item.amount), 0);
-            setDailyExpensesTotal(total);
-            setValue('totalGastos', total); // Sync with Zod Schema
+        // 2. Fetch Purchases
+        const { data: purchasesData, error: purchasesError } = await supabase
+            .from('purchases')
+            .select('*, suppliers(name)')
+            .eq('date', selectedDate)
+            .eq('status', 'completed')
+            .eq('payment_method', 'cash');
+
+        let combinedTotal = 0;
+        let combinedList: any[] = [];
+
+        if (!expensesError && expensesData) {
+            expensesData.forEach(e => {
+                combinedTotal += Number(e.amount);
+                combinedList.push({
+                    id: e.id,
+                    type: 'gasto',
+                    description: e.description,
+                    amount: Number(e.amount)
+                });
+            });
         }
+
+        if (!purchasesError && purchasesData) {
+            purchasesData.forEach(p => {
+                const supplierName = p.suppliers?.name || 'Varios';
+                combinedTotal += Number(p.total_amount);
+                combinedList.push({
+                    id: p.id,
+                    type: 'compra',
+                    description: `Compra: ${supplierName}`,
+                    amount: Number(p.total_amount)
+                });
+            });
+        }
+
+        // Sort combined list by description alphabetically for neatness
+        combinedList.sort((a, b) => a.description.localeCompare(b.description));
+
+        setDailyOutflowsList(combinedList);
+        setDailyOutflowsTotal(combinedTotal);
+        setValue('totalGastos', combinedTotal); // Sync with Zod Schema
     }, [selectedDate, setValue]);
 
     useEffect(() => {
-        fetchDailyExpenses();
-    }, [fetchDailyExpenses, props.refreshTrigger]);
+        fetchDailyOutflows();
+    }, [fetchDailyOutflows, props.refreshTrigger]);
 
-    const handleDeleteExpense = async (id: string) => {
-        if (confirm('¿Eliminar este gasto?')) {
-            await deleteExpense(id);
-            setTimeout(() => fetchDailyExpenses(), 500);
+    const handleDeleteOutflow = async (id: string, type: string) => {
+        if (type === 'gasto') {
+            if (confirm('¿Eliminar este gasto?')) {
+                await deleteExpense(id);
+                setTimeout(() => fetchDailyOutflows(), 500);
+            }
+        } else {
+            alert('Para proteger el inventario, las compras deben ser anuladas desde la pestaña de "Compras".');
         }
     };
 
-    const totalPagos = pagoEfectivo + pagoYape + pagoTarjeta + pagoTransferencia + dailyExpensesTotal;
+    const totalPagos = pagoEfectivo + pagoYape + pagoTarjeta + pagoTransferencia + dailyOutflowsTotal;
     const diff = totalDia - totalPagos;
     const isBalanced = Math.abs(diff) < 0.01;
     // Store original date to check changes
@@ -423,64 +464,73 @@ export default function IncomeForm(props: IncomeFormProps) {
                                 </div>
                             </div>
 
-                            {/* Daily Expenses Display */}
+                            {/* Daily Outflows Display (Gastos + Compras) */}
                             <div className="pt-4 border-t border-gray-100">
                                 <div className="flex items-center justify-between mb-2">
-                                    <label className="block text-xs font-bold text-red-600">📉 Gastos del Día (Pagados)</label>
+                                    <label className="block text-[11px] font-bold text-red-600 uppercase tracking-tight">📉 Salidas de Efectivo (Gastos/Compras)</label>
                                     <button
                                         type="button"
-                                        onClick={() => setShowExpenses(!showExpenses)}
-                                        className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                                        onClick={() => setShowOutflows(!showOutflows)}
+                                        className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 bg-blue-50 px-2 py-1 rounded transition-colors"
                                     >
-                                        {showExpenses ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                                        {showExpenses ? 'Ocultar' : 'Ver Detalles'}
+                                        {showOutflows ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                                        {showOutflows ? 'Ocultar' : 'Ver Detalles'}
                                     </button>
                                 </div>
 
                                 <div className="relative mb-2">
-                                    <span className="absolute left-3 top-2 text-red-300 font-bold">S/</span>
+                                    <span className="absolute left-3 top-2.5 text-red-400 font-bold">S/</span>
                                     <input
                                         type="text"
                                         readOnly
                                         disabled
-                                        value={dailyExpensesTotal.toFixed(2)}
-                                        className="w-full bg-red-50 border border-red-100 rounded-md py-2 pl-8 font-bold text-red-700"
+                                        value={dailyOutflowsTotal.toFixed(2)}
+                                        className="w-full bg-red-50 border border-red-200 rounded-md py-2.5 pl-8 font-black text-lg text-red-700 shadow-sm"
                                     />
                                 </div>
 
-                                {showExpenses && (
-                                    <div className="bg-white border border-gray-200 rounded-md overflow-hidden text-xs animate-in fade-in slide-in-from-top-2">
+                                {showOutflows && (
+                                    <div className="bg-white border border-gray-200 rounded-md overflow-hidden text-xs shadow-sm mb-2 animate-in fade-in slide-in-from-top-2">
                                         <table className="w-full">
-                                            <thead className="bg-gray-50">
+                                            <thead className="bg-slate-100 border-b border-slate-200">
                                                 <tr>
-                                                    <th className="px-2 py-1 text-left text-gray-500">Descripción</th>
-                                                    <th className="px-2 py-1 text-right text-gray-500">Monto</th>
-                                                    <th className="px-2 py-1"></th>
+                                                    <th className="px-2 py-1.5 text-left text-slate-600 font-bold">Concepto / Destino</th>
+                                                    <th className="px-2 py-1.5 text-right text-slate-600 font-bold">Monto</th>
+                                                    <th className="px-2 py-1.5 w-8"></th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-100">
-                                                {dailyExpensesList.map((expense) => (
-                                                    <tr key={expense.id} className="hover:bg-red-50">
-                                                        <td className="px-2 py-1.5 text-gray-700">{expense.description}</td>
-                                                        <td className="px-2 py-1.5 text-right font-medium text-red-600">
-                                                            {Number(expense.amount).toFixed(2)}
+                                                {dailyOutflowsList.map((item) => (
+                                                    <tr key={item.id} className="hover:bg-red-50/50 transition-colors">
+                                                        <td className="px-2 py-2 text-gray-700">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <span className={clsx("w-2 h-2 rounded-full", item.type === 'compra' ? 'bg-purple-500' : 'bg-orange-500')}></span>
+                                                                <span className="font-medium text-[11px]">{item.description}</span>
+                                                            </div>
                                                         </td>
-                                                        <td className="px-2 py-1.5 text-right">
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => handleDeleteExpense(expense.id)}
-                                                                className="text-gray-400 hover:text-red-600 transition-colors"
-                                                                title="Eliminar gasto"
-                                                            >
-                                                                <Trash2 className="w-3 h-3" />
-                                                            </button>
+                                                        <td className="px-2 py-2 text-right font-bold text-red-600">
+                                                            {Number(item.amount).toFixed(2)}
+                                                        </td>
+                                                        <td className="px-2 py-2 text-right">
+                                                            {item.type === 'gasto' ? (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleDeleteOutflow(item.id, item.type)}
+                                                                    className="text-gray-400 hover:text-red-600 transition-colors p-1"
+                                                                    title="Eliminar gasto"
+                                                                >
+                                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                                </button>
+                                                            ) : (
+                                                                <span title="Anular desde la pestaña 'Compras'" className="text-gray-300 w-3.5 h-3.5 inline-block cursor-help font-bold opacity-50">C</span>
+                                                            )}
                                                         </td>
                                                     </tr>
                                                 ))}
-                                                {dailyExpensesList.length === 0 && (
+                                                {dailyOutflowsList.length === 0 && (
                                                     <tr>
-                                                        <td colSpan={3} className="px-2 py-3 text-center text-gray-400 italic">
-                                                            No hay gastos registrados hoy.
+                                                        <td colSpan={3} className="px-2 py-4 text-center text-gray-400 italic">
+                                                            Hoy no hubo salidas de efectivo en caja.
                                                         </td>
                                                     </tr>
                                                 )}
@@ -489,7 +539,7 @@ export default function IncomeForm(props: IncomeFormProps) {
                                     </div>
                                 )}
 
-                                <p className="text-[10px] text-gray-400 mt-1">Este monto se suma a los pagos para cuadrar con las ventas.</p>
+                                <p className="text-[10px] text-gray-400 leading-tight">Este pozo se auto-suma al cuadre para justificar el efectivo descontado de las ventas.</p>
                             </div>
                         </div>
                     </div>
